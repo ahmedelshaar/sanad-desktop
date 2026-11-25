@@ -1,0 +1,218 @@
+/* Print sheet. All sizes in mm/pt so the output matches the paper. */
+
+body.print-mode {
+  margin: 0;
+  background: #fff;
+}
+
+.sheet {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  color: #000;
+  direction: rtl;
+  font-family: 'Cairo', 'Traditional Arabic', 'Arial', sans-serif;
+  box-sizing: border-box;
+}
+
+.voucher {
+  position: absolute;
+  inset: 0;
+  padding: 12mm 14mm;
+  box-sizing: border-box;
+  transform-origin: top right;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
+}
+
+/* header */
+.v-header {
+  display: flex;
+  align-items: center;
+  gap: 6mm;
+  border: 0.5mm solid #000;
+  border-radius: 4mm;
+  padding: 3mm 6mm;
+}
+.v-logo {
+  max-height: 22mm;
+  max-width: 45mm;
+  object-fit: contain;
+}
+.v-header-text {
+  flex: 1;
+  text-align: center;
+}
+.v-h-title {
+  font-size: 1.45em;
+  font-weight: 800;
+}
+.v-h-owner {
+  font-size: 1.15em;
+  font-weight: 700;
+}
+.v-h-line {
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.v-city {
+  text-align: center;
+  margin-top: 3mm;
+  font-weight: 700;
+}
+.v-city-name {
+  display: inline-block;
+  min-width: 30mm;
+  border-bottom: 0.3mm dotted #000;
+}
+
+/* title bar: amount box | title | number/date */
+.v-titlebar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin: 2mm 0 4mm;
+}
+.v-amount {
+  display: flex;
+  gap: 2mm;
+  justify-self: start;
+}
+.v-amount-cell {
+  border: 0.4mm solid #000;
+  border-radius: 2mm;
+  background: #eee;
+  min-width: 34mm;
+  text-align: center;
+  overflow: hidden;
+}
+.v-amount-cell.small {
+  min-width: 14mm;
+}
+.v-amount-label {
+  font-size: 0.8em;
+  font-weight: 700;
+  border-bottom: 0.3mm solid #000;
+  background: #fff;
+}
+.v-amount-value {
+  font-size: 1.3em;
+  font-weight: 800;
+  padding: 1mm 2mm;
+  white-space: nowrap;
+}
+.v-title {
+  margin: 0 6mm;
+  font-size: 2.1em;
+  font-weight: 800;
+  border-bottom: 0.6mm solid #000;
+  line-height: 1.4;
+}
+.v-meta {
+  justify-self: end;
+  text-align: left;
+  font-size: 0.95em;
+}
+.v-number {
+  font-size: 1.25em;
+  color: #b00000;
+}
+.v-book,
+.v-greg {
+  font-size: 0.8em;
+}
+
+/* body lines */
+.v-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3.4mm;
+}
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5mm;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.fill {
+  flex-basis: 0;
+  border-bottom: 0.3mm dotted #000;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 1.4em;
+  padding: 0 1mm;
+}
+.words {
+  flex: 1;
+  background: #eee;
+  border: 0.3mm solid #000;
+  border-radius: 1.5mm;
+  padding: 1mm 3mm;
+  font-weight: 700;
+  white-space: normal;
+}
+.para {
+  margin: 0;
+  font-weight: 700;
+  text-align: justify;
+}
+.v-sep {
+  border-top: 0.3mm dashed #000;
+  margin: 1mm 0;
+}
+
+/* signatures */
+.v-signs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6mm;
+  margin-top: 7mm;
+  text-align: center;
+}
+.v-sign-label {
+  font-weight: 800;
+}
+.v-sign-name {
+  font-size: 0.85em;
+  min-height: 1.4em;
+}
+.v-sign-line {
+  border-bottom: 0.3mm solid #000;
+  height: 16mm;
+}
+
+.v-footer {
+  margin-top: auto;
+  border-top: 0.4mm solid #000;
+  padding-top: 2mm;
+  font-size: 0.75em;
+  font-weight: 700;
+  text-align: center;
+}
+
+.v-void {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-25deg);
+  font-size: 60pt;
+  font-weight: 800;
+  color: rgba(200, 0, 0, 0.25);
+  border: 2mm solid rgba(200, 0, 0, 0.25);
+  padding: 0 10mm;
+  pointer-events: none;
+}
+
+@media print {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+}
