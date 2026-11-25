@@ -3,7 +3,7 @@
   "productName": "Sanad",
   "version": "0.1.0",
   "description": "برنامج سندات لأمر — Promissory notes desktop app",
-  "author": "Eleva Pro Technology",
+  "author": "Eleva Pro Technology <elshaar@eleva-protech.com> (https://eleva-protech.com)",
   "private": true,
   "main": "electron/main.cjs",
   "scripts": {
@@ -44,16 +44,19 @@
         "nsis",
         "zip"
       ],
-      "signAndEditExecutable": false
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "shortcutName": "Sanad - سندات"
+      "shortcutName": "Sanad - سندات",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
     },
     "npmRebuild": false,
     "asarUnpack": [
       "electron/assets/**"
     ]
-  }
+  },
+  "homepage": "https://eleva-protech.com"
 }
