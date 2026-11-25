@@ -2,10 +2,11 @@ const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
-const { openDb } = require('./db.cjs');
+const { openDb, inspectBackup } = require('./db.cjs');
 
 const DEV_URL = process.env.VITE_DEV_SERVER_URL;
 let repo;
+let dbFile;
 let mainWindow;
 
 function loadApp(win, hash = '') {
@@ -173,6 +174,44 @@ function registerIpc() {
     await repo.backup(filePath);
     return filePath;
   });
+  handle('backup:restore', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      filters: [{ name: 'SQLite', extensions: ['db'] }],
+      properties: ['openFile'],
+    });
+    if (canceled || !filePaths[0]) return null;
+    const source = filePaths[0];
+    const info = inspectBackup(source); // throws BACKUP_INVALID
+
+    const { response } = await dialog.showMessageBox(mainWindow, {
+      type: 'warning',
+      buttons: ['استرجاع - Restore', 'إلغاء - Cancel'],
+      defaultId: 1,
+      cancelId: 1,
+      title: 'استرجاع نسخة احتياطية - Restore backup',
+      message: `النسخة فيها ${info.books} دفتر و ${info.vouchers} سند.\nالبيانات الحالية هتتستبدل بالنسخة دي.`,
+      detail: `This backup has ${info.books} books and ${info.vouchers} notes. Current data will be replaced.\nA copy of the current data is saved first in the app data folder.`,
+    });
+    if (response !== 0) return null;
+
+    // Keep a copy of the current data before replacing it.
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const safety = path.join(path.dirname(dbFile), `sanad-before-restore-${stamp}.db`);
+    repo.backup(safety);
+
+    repo.close();
+    for (const ext of ['-wal', '-shm']) {
+      try {
+        fs.unlinkSync(dbFile + ext);
+      } catch {
+        /* not there */
+      }
+    }
+    fs.copyFileSync(source, dbFile);
+    repo = openDb(dbFile);
+    setTimeout(() => mainWindow && mainWindow.reload(), 300);
+    return { ...info, safety };
+  });
 
   handle('books:list', () => repo.listBooks());
   handle('books:create', (data) => repo.createBook(data));
@@ -190,7 +229,7 @@ function registerIpc() {
 }
 
 app.whenReady().then(() => {
-  const dbFile = path.join(app.getPath('userData'), 'sanad.db');
+  dbFile = path.join(app.getPath('userData'), 'sanad.db');
   repo = openDb(dbFile);
   seedDefaultLogo();
   registerIpc();

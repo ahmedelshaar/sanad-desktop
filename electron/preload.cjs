@@ -9,7 +9,7 @@ contextBridge.exposeInMainWorld('sanad', {
     pickLogo: () => call('settings:pickLogo'),
   },
   printers: { list: () => call('printers:list') },
-  backup: { create: () => call('backup:create') },
+  backup: { create: () => call('backup:create'), restore: () => call('backup:restore') },
   books: {
     list: () => call('books:list'),
     create: (data) => call('books:create', data),

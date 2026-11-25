@@ -57,6 +57,16 @@ export default function Settings({ settings, onSaved }) {
     if (logo) set({ logo });
   };
 
+  const restore = async () => {
+    setMsg(null);
+    try {
+      const res = await api.backup.restore();
+      if (res) setMsg({ type: 'success', text: t('backup_restored') });
+    } catch (err) {
+      setMsg({ type: 'error', text: errorText(t, err.message) });
+    }
+  };
+
   const backup = async () => {
     try {
       const file = await api.backup.create();
@@ -172,9 +182,15 @@ export default function Settings({ settings, onSaved }) {
 
           <div className="card">
             <h2>{t('sec_backup')}</h2>
-            <button className="btn" onClick={backup}>
-              {t('backup_now')}
-            </button>
+            <div className="actions">
+              <button className="btn" onClick={backup}>
+                {t('backup_now')}
+              </button>
+              <button className="btn" onClick={restore}>
+                {t('backup_restore')}
+              </button>
+            </div>
+            <p className="muted small">{t('backup_restore_hint')}</p>
           </div>
         </div>
 

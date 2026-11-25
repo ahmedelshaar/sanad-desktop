@@ -124,6 +124,9 @@ const ar = {
   sec_backup: 'النسخ الاحتياطي',
   backup_now: 'حفظ نسخة احتياطية',
   backup_done: 'تم حفظ النسخة في',
+  backup_restore: 'استرجاع نسخة احتياطية',
+  backup_restore_hint: 'اختار ملف .db اتعمل من زرار حفظ نسخة احتياطية. البيانات الحالية هتتحفظ نسخة منها الأول.',
+  backup_restored: 'تم الاسترجاع',
   settings_saved: 'تم حفظ الإعدادات',
 
   // errors
@@ -136,6 +139,7 @@ const ar = {
   err_AMOUNT_REQUIRED: 'اكتب المبلغ',
   err_VOUCHER_CANCELLED: 'لا يمكن تعديل سند ملغي',
   err_PRINT_TIMEOUT: 'تعذر تجهيز الطباعة',
+  err_BACKUP_INVALID: 'الملف ده مش نسخة احتياطية من البرنامج',
   err_generic: 'حدث خطأ',
 };
 
@@ -259,6 +263,9 @@ const en = {
   sec_backup: 'Backup',
   backup_now: 'Save a backup',
   backup_done: 'Backup saved to',
+  backup_restore: 'Restore a backup',
+  backup_restore_hint: 'Choose a .db file made with Save a backup. A copy of the current data is saved first.',
+  backup_restored: 'Restored',
   settings_saved: 'Settings saved',
 
   err_BOOK_NAME_REQUIRED: 'Enter the book name',
@@ -270,6 +277,7 @@ const en = {
   err_AMOUNT_REQUIRED: 'Enter the amount',
   err_VOUCHER_CANCELLED: 'A cancelled note cannot be edited',
   err_PRINT_TIMEOUT: 'Could not prepare the print',
+  err_BACKUP_INVALID: 'This file is not a Sanad backup',
   err_generic: 'Something went wrong',
 };
 

@@ -79,7 +79,7 @@ export function createMock() {
       pickLogo: () => ok(null),
     },
     printers: { list: () => ok([]) },
-    backup: { create: () => ok(null) },
+    backup: { create: () => ok(null), restore: () => ok(null) },
     books: {
       list: () => ok(books.map(bookView).reverse()),
       create: ({ name, count }) => {
