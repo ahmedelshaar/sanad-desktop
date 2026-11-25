@@ -1,0 +1,200 @@
+const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
+const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
+const { openDb } = require('./db.cjs');
+
+const DEV_URL = process.env.VITE_DEV_SERVER_URL;
+let repo;
+let mainWindow;
+
+function loadApp(win, hash = '') {
+  if (DEV_URL) return win.loadURL(`${DEV_URL}${hash ? '#' + hash : ''}`);
+  return win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'), hash ? { hash } : undefined);
+}
+
+function webPrefs() {
+  return {
+    preload: path.join(__dirname, 'preload.cjs'),
+    contextIsolation: true,
+    nodeIntegration: false,
+    sandbox: false,
+  };
+}
+
+function createMainWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1280,
+    height: 860,
+    minWidth: 1000,
+    minHeight: 680,
+    title: 'Sanad - سندات',
+    webPreferences: webPrefs(),
+  });
+  if (!DEV_URL) Menu.setApplicationMenu(null);
+  loadApp(mainWindow);
+}
+
+// ---------- printing ----------
+function pageSizeFromSettings(s) {
+  if (s.paper === 'A4' || s.paper === 'A5') return s.paper;
+  const w = Math.round(parseFloat(s.paper_width_mm) * 1000);
+  const h = Math.round(parseFloat(s.paper_height_mm) * 1000);
+  if (!(w > 0 && h > 0)) return 'A4';
+  return { width: w, height: h }; // microns
+}
+
+// Renders the voucher in a hidden window and waits until React says it is ready.
+function renderForPrint(voucherId) {
+  return new Promise((resolve, reject) => {
+    const win = new BrowserWindow({ show: false, width: 900, height: 1200, webPreferences: webPrefs() });
+    const timer = setTimeout(() => {
+      cleanup();
+      win.destroy();
+      reject(new Error('PRINT_TIMEOUT'));
+    }, 15000);
+    const onReady = (event) => {
+      if (event.sender !== win.webContents) return;
+      cleanup();
+      resolve(win);
+    };
+    function cleanup() {
+      clearTimeout(timer);
+      ipcMain.removeListener('print:ready', onReady);
+    }
+    ipcMain.on('print:ready', onReady);
+    loadApp(win, `/print/${voucherId}`);
+  });
+}
+
+async function printVoucher(voucherId, mode) {
+  const settings = repo.getSettings();
+  const pageSize = pageSizeFromSettings(settings);
+  const win = await renderForPrint(voucherId);
+  try {
+    if (mode === 'print') {
+      const ok = await new Promise((resolve) => {
+        win.webContents.print(
+          {
+            silent: settings.silent_print === '1',
+            deviceName: settings.printer_name || undefined,
+            printBackground: true,
+            margins: { marginType: 'none' },
+            pageSize,
+          },
+          (success, reason) => resolve(success || reason)
+        );
+      });
+      if (ok === true) repo.markPrinted(voucherId);
+      return { ok: ok === true, reason: ok === true ? null : ok };
+    }
+
+    const pdf = await win.webContents.printToPDF({
+      pageSize,
+      printBackground: true,
+      margins: { marginType: 'none' },
+    });
+
+    if (mode === 'pdf') {
+      const v = repo.getVoucher(voucherId);
+      const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+        defaultPath: `sanad-${v.book_name}-${v.number_label}.pdf`,
+        filters: [{ name: 'PDF', extensions: ['pdf'] }],
+      });
+      if (canceled || !filePath) return { ok: false, reason: 'cancelled' };
+      fs.writeFileSync(filePath, pdf);
+      return { ok: true, file: filePath };
+    }
+
+    // preview
+    const file = path.join(os.tmpdir(), `sanad-preview-${voucherId}-${Date.now()}.pdf`);
+    fs.writeFileSync(file, pdf);
+    const preview = new BrowserWindow({
+      width: 900,
+      height: 1000,
+      title: 'معاينة السند - Preview',
+      webPreferences: { plugins: true },
+    });
+    preview.setMenu(null);
+    preview.loadURL('file://' + file);
+    return { ok: true };
+  } finally {
+    win.destroy();
+  }
+}
+
+// ---------- IPC ----------
+function handle(channel, fn) {
+  ipcMain.handle(channel, async (_e, ...args) => {
+    try {
+      return { ok: true, data: await fn(...args) };
+    } catch (err) {
+      return { ok: false, error: err.message || String(err) };
+    }
+  });
+}
+
+function registerIpc() {
+  handle('settings:get', () => repo.getSettings());
+  handle('settings:save', (values) => repo.saveSettings(values));
+  handle('settings:pickLogo', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'svg', 'webp'] }],
+      properties: ['openFile'],
+    });
+    if (canceled || !filePaths[0]) return null;
+    const ext = path.extname(filePaths[0]).slice(1).toLowerCase();
+    const mime = ext === 'svg' ? 'image/svg+xml' : ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+    return `data:${mime};base64,${fs.readFileSync(filePaths[0]).toString('base64')}`;
+  });
+  handle('printers:list', async () => {
+    const list = await mainWindow.webContents.getPrintersAsync();
+    return list.map((p) => ({ name: p.name, displayName: p.displayName || p.name, isDefault: p.isDefault }));
+  });
+  handle('backup:create', async () => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      defaultPath: `sanad-backup-${stamp}.db`,
+      filters: [{ name: 'SQLite', extensions: ['db'] }],
+    });
+    if (canceled || !filePath) return null;
+    await repo.backup(filePath);
+    return filePath;
+  });
+
+  handle('books:list', () => repo.listBooks());
+  handle('books:create', (data) => repo.createBook(data));
+  handle('books:setStatus', (id, status) => repo.setBookStatus(id, status));
+  handle('books:next', (id) => repo.nextNumber(id));
+
+  handle('customers:search', (q) => repo.searchCustomers(q));
+
+  handle('vouchers:list', (filters) => repo.listVouchers(filters));
+  handle('vouchers:get', (id) => repo.getVoucher(id));
+  handle('vouchers:create', (bookId, data) => repo.createVoucher(bookId, data));
+  handle('vouchers:update', (id, data) => repo.updateVoucher(id, data));
+  handle('vouchers:cancel', (id, reason) => repo.cancelVoucher(id, reason));
+  handle('vouchers:print', (id, mode) => printVoucher(id, mode || 'print'));
+}
+
+app.whenReady().then(() => {
+  const dbFile = path.join(app.getPath('userData'), 'sanad.db');
+  repo = openDb(dbFile);
+  registerIpc();
+  createMainWindow();
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
+  });
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('before-quit', () => {
+  try {
+    repo && repo.close();
+  } catch {
+    /* ignore */
+  }
+});
