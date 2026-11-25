@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -30,7 +30,13 @@ function createMainWindow() {
     minWidth: 1000,
     minHeight: 680,
     title: 'Sanad - سندات',
+    icon: path.join(__dirname, 'assets', 'icon.png'),
     webPreferences: webPrefs(),
+  });
+  // Links (e.g. the Eleva website) open in the default browser, never inside the app.
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https:\/\//.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
   });
   if (!DEV_URL) Menu.setApplicationMenu(null);
   loadApp(mainWindow);
@@ -148,6 +154,8 @@ function handle(channel, fn) {
 }
 
 function registerIpc() {
+  handle('app:info', () => ({ version: app.getVersion() }));
+  handle('app:openSite', () => shell.openExternal('https://eleva-protech.com'));
   handle('settings:get', () => repo.getSettings());
   handle('settings:save', (values) => repo.saveSettings(values));
   handle('settings:pickLogo', async () => {

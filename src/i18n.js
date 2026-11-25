@@ -7,6 +7,8 @@ const ar = {
   nav_books: 'الدفاتر',
   nav_settings: 'الإعدادات',
   lang_toggle: 'English',
+  developed_by: 'تطوير',
+  version: 'الإصدار',
 
   // books
   books_title: 'الدفاتر',
@@ -150,6 +152,8 @@ const en = {
   nav_books: 'Books',
   nav_settings: 'Settings',
   lang_toggle: 'عربي',
+  developed_by: 'Developed by',
+  version: 'Version',
 
   books_title: 'Books',
   book_new: 'New book',

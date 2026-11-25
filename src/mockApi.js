@@ -78,6 +78,10 @@ export function createMock() {
       save: (vals) => ok((settings = { ...settings, ...vals })),
       pickLogo: () => ok(null),
     },
+    app: {
+      info: () => ok({ version: '0.1.0' }),
+      openSite: () => ok(window.open('https://eleva-protech.com', '_blank')),
+    },
     printers: { list: () => ok([]) },
     backup: { create: () => ok(null), restore: () => ok(null) },
     books: {

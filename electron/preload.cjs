@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('sanad', {
     save: (values) => call('settings:save', values),
     pickLogo: () => call('settings:pickLogo'),
   },
+  app: { info: () => call('app:info'), openSite: () => call('app:openSite') },
   printers: { list: () => call('printers:list') },
   backup: { create: () => call('backup:create'), restore: () => call('backup:restore') },
   books: {
