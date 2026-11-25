@@ -93,7 +93,12 @@ export default function Settings({ settings, onSaved }) {
         <div>
           <div className="card form-grid">
             <h2 className="span-all">{t('sec_header')}</h2>
-            {text('header_title', t('header_title'), 'span-all')}
+            {text('header_prefix', t('header_prefix'), 'span-2')}
+            {text('header_title', t('header_title'), 'span-2')}
+            <label className="span-all">
+              {t('header_activity')}
+              <textarea rows="2" value={s.header_activity || ''} onChange={(e) => set({ header_activity: e.target.value })} />
+            </label>
             {text('header_owner', t('header_owner'), 'span-all')}
             {text('header_license', t('header_license'), 'span-all')}
             {text('header_contacts', t('header_contacts'), 'span-all')}
@@ -113,7 +118,7 @@ export default function Settings({ settings, onSaved }) {
             {text('creditor_name', t('default_creditor'), 'span-2')}
             <label className="span-all">
               {t('footer_text')}
-              <textarea rows="3" value={s.footer_text || ''} onChange={(e) => set({ footer_text: e.target.value })} />
+              <textarea rows="2" value={s.footer_text || ''} onChange={(e) => set({ footer_text: e.target.value })} />
             </label>
           </div>
 
@@ -124,6 +129,7 @@ export default function Settings({ settings, onSaved }) {
               <select value={s.paper} onChange={(e) => set({ paper: e.target.value })}>
                 <option value="A4">A4</option>
                 <option value="A5">A5</option>
+                <option value="letter">{t('paper_letter')}</option>
                 <option value="custom">{t('paper_custom')}</option>
               </select>
             </label>
