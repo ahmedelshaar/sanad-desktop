@@ -23,9 +23,9 @@ export function createMock() {
     creditor_name: 'عبدالله أحمد حسن العمري', // default "الطرف الأول"
     footer_text:
       'هذا السند واجب الدفع بموجب قرار مجلس الوزراء الموقر رقم ٦٩٣ وتاريخ ٢٦ / ٩ / ١٣٨٣ هـ\nالمتوج بالمرسوم الملكي الكريم رقم ٣٧ وتاريخ ١١ / ١٠ / ١٣٨٣ هـ ( الخاص بتنظيم الأوراق التجارية )',
-    paper: 'A4',
-    paper_width_mm: '210',
-    paper_height_mm: '297',
+    paper: 'A5',
+    paper_width_mm: '148',
+    paper_height_mm: '210',
     offset_x_mm: '0',
     offset_y_mm: '0',
     scale: '1',
