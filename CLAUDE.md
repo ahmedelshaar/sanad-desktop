@@ -1,6 +1,6 @@
 # Sanad — notes for Claude Code
 
-Desktop app (Electron + React/Vite + SQLite) for promissory notes (سند لأمر) printed from numbered books.
+Desktop app (Electron + React/Vite + SQLite via built-in `node:sqlite`) for promissory notes (سند لأمر) printed from numbered books.
 
 ## Rules
 - Arabic text: no tashkeel at all (no tanween, shadda, harakat) — in UI strings, print template and code.
@@ -10,7 +10,8 @@ Desktop app (Electron + React/Vite + SQLite) for promissory notes (سند لأم
 
 ## Commands
 - `npm run dev` — Vite on :5173 + Electron
-- `npm test` — node:test (needs better-sqlite3 built for Node: `npm rebuild better-sqlite3`)
+- `npm test` — node:test (Node 22.13+, uses built-in `node:sqlite`)
+- `npm run dist:zip` — portable Windows zip (works from Linux too)
 - `npm run dist` — Windows installer in `release/`
 - `npx vite` alone opens the UI in a browser using `src/mockApi.js` (no Electron) — handy for layout work;
   `http://localhost:5173/#/print/1` shows the print template.

@@ -3,7 +3,7 @@
 برنامج سطح مكتب لإصدار وطباعة السندات لأمر في دفاتر مرقمة.
 A desktop app for issuing and printing promissory notes (سند لأمر) in numbered books.
 
-**Stack:** Electron + React (Vite) + SQLite (better-sqlite3)
+**Stack:** Electron + React (Vite) + SQLite (`node:sqlite`, built into Electron — no native add-on)
 
 ## المميزات — Features
 
@@ -24,14 +24,12 @@ A desktop app for issuing and printing promissory notes (سند لأمر) in num
 ## التشغيل — Running
 
 ```bash
-npm install        # يثبت المكتبات ويبني better-sqlite3 لنسخة Electron
+npm install        # يثبت المكتبات
 npm run dev        # تشغيل للتطوير (Vite + Electron)
-npm test           # اختبارات التفقيط والتواريخ والترقيم
-npm run dist       # ملف تثبيت ويندوز في مجلد release/
+npm test           # اختبارات التفقيط والتواريخ والترقيم (Node 22.13+)
+npm run dist       # ملف تثبيت ويندوز + نسخة zip في مجلد release/
+npm run dist:zip   # نسخة zip بس (تتبني كمان من Linux)
 ```
-
-> `npm test` runs with plain Node. If `npm install` rebuilt better-sqlite3 for Electron, run
-> `npm rebuild better-sqlite3` before testing, then `npx electron-builder install-app-deps` before `npm run dev` again.
 
 ## مكان البيانات — Data location
 
