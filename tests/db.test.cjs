@@ -68,3 +68,33 @@ test('settings and print counter', () => {
   const v = repo.createVoucher(book.id, voucher());
   assert.equal(repo.markPrinted(v.id).print_count, 1);
 });
+
+test('backup can be inspected and restored', () => {
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const { inspectBackup } = require('../electron/db.cjs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sanad-'));
+  const live = path.join(dir, 'sanad.db');
+  const bak = path.join(dir, 'backup.db');
+
+  let repo = openDb(live);
+  const book = repo.createBook({ name: 'B', count: 60 });
+  repo.createVoucher(book.id, voucher());
+  repo.backup(bak);
+  repo.createVoucher(book.id, voucher()); // newer data, not in the backup
+
+  assert.deepEqual(inspectBackup(bak), { books: 1, vouchers: 1 });
+  const junk = path.join(dir, 'junk.db');
+  fs.writeFileSync(junk, 'not a database');
+  assert.throws(() => inspectBackup(junk), /BACKUP_INVALID/);
+
+  // same steps as the restore handler in main.cjs
+  repo.close();
+  for (const ext of ['-wal', '-shm']) fs.rmSync(live + ext, { force: true });
+  fs.copyFileSync(bak, live);
+  repo = openDb(live);
+  assert.equal(repo.listVouchers().length, 1);
+  assert.equal(repo.nextNumber(book.id).label, '02');
+  repo.close();
+});

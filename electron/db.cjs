@@ -410,4 +410,31 @@ function createRepo(db) {
   };
 }
 
-module.exports = { openDb, seqLabel, DEFAULT_SETTINGS, VOUCHER_FIELDS };
+// Checks that a file is a Sanad database before restoring it. Returns counts, or throws BACKUP_INVALID.
+function inspectBackup(file) {
+  let db;
+  try {
+    db = new DatabaseSync(file, { readOnly: true });
+    const tables = db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+      .all()
+      .map((r) => r.name);
+    for (const t of ['books', 'vouchers', 'customers', 'settings']) {
+      if (!tables.includes(t)) throw new Error('BACKUP_INVALID');
+    }
+    return {
+      books: db.prepare('SELECT COUNT(*) AS n FROM books').get().n,
+      vouchers: db.prepare('SELECT COUNT(*) AS n FROM vouchers').get().n,
+    };
+  } catch (err) {
+    throw new Error('BACKUP_INVALID');
+  } finally {
+    try {
+      db && db.close();
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+module.exports = { openDb, inspectBackup, seqLabel, DEFAULT_SETTINGS, VOUCHER_FIELDS };
