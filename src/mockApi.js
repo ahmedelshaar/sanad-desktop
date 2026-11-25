@@ -1,3 +1,5 @@
+import defaultLogo from '../electron/assets/default-logo.png';
+
 // In-memory stand-in for the Electron bridge, used only when the UI runs in a normal browser.
 // Lets you work on screens and the print layout with `npx vite` without Electron.
 
@@ -8,15 +10,19 @@ export function createMock() {
 
   let settings = {
     ui_lang: 'ar',
-    header_title: 'معرض لبيع وشراء السيارات',
-    header_owner: 'لصاحبه / عبدالله أحمد',
-    header_license: 'ترخيص رقم 000 - س.ت 0000000000',
-    header_contacts: 'هاتف: 000 0000000 - جوال: 0500000000',
-    logo: '',
+    // Stamp printed at the top of the note (defaults copy the client's paper form)
+    header_prefix: 'معــــرض',
+    header_title: 'بن زرعه', // used when there is no logo image
+    header_activity: 'لبيــع\nوشراء السيارات',
+    header_owner: 'لصاحبه / عبدالله أحمد حسن العمري',
+    header_license: 'ترخيص رقم ١٠٧ - س.ت ٥٨٠٦٠٠٨٥٦٦',
+    header_contacts: 'هاتف : ٠١٧ ٧٢٨٢٩٦٦ - ص.ب ١٦ - جوال: ٠٥٠٣٧٨١٠٣٥ - ٠٥٠٤٥٨٨٧٢١',
+    logo: defaultLogo,
+    logo_seeded: '0', // set to 1 once the bundled default logo was loaded
     city: 'المخواة',
-    creditor_name: 'عبدالله أحمد',
+    creditor_name: 'عبدالله أحمد حسن العمري', // default "الطرف الأول"
     footer_text:
-      'هذا السند واجب الدفع بموجب قرار مجلس الوزراء الموقر رقم 693 وتاريخ 26 / 9 / 1383 هـ المتوج بالمرسوم الملكي الكريم رقم 37 وتاريخ 11 / 10 / 1383 هـ ( الخاص بتنظيم الأوراق التجارية )',
+      'هذا السند واجب الدفع بموجب قرار مجلس الوزراء الموقر رقم ٦٩٣ وتاريخ ٢٦ / ٩ / ١٣٨٣ هـ\nالمتوج بالمرسوم الملكي الكريم رقم ٣٧ وتاريخ ١١ / ١٠ / ١٣٨٣ هـ ( الخاص بتنظيم الأوراق التجارية )',
     paper: 'A4',
     paper_width_mm: '210',
     paper_height_mm: '297',

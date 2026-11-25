@@ -35,6 +35,18 @@ function createMainWindow() {
   loadApp(mainWindow);
 }
 
+// First run: load the logo cropped from the client's paper form as the default stamp logo.
+function seedDefaultLogo() {
+  const s = repo.getSettings();
+  if (s.logo_seeded === '1') return;
+  const file = path.join(__dirname, 'assets', 'default-logo.png');
+  const patch = { logo_seeded: '1' };
+  if (!s.logo && fs.existsSync(file)) {
+    patch.logo = `data:image/png;base64,${fs.readFileSync(file).toString('base64')}`;
+  }
+  repo.saveSettings(patch);
+}
+
 // ---------- printing ----------
 function pageSizeFromSettings(s) {
   if (s.paper === 'A4' || s.paper === 'A5') return s.paper;
@@ -180,6 +192,7 @@ function registerIpc() {
 app.whenReady().then(() => {
   const dbFile = path.join(app.getPath('userData'), 'sanad.db');
   repo = openDb(dbFile);
+  seedDefaultLogo();
   registerIpc();
   createMainWindow();
   app.on('activate', () => {

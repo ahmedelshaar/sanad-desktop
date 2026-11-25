@@ -5,18 +5,21 @@ const Database = require('better-sqlite3');
 
 const DEFAULT_SETTINGS = {
   ui_lang: 'ar',
-  // Header printed at the top of the voucher
-  header_title: 'معرض لبيع وشراء السيارات',
-  header_owner: 'لصاحبه / ',
-  header_license: '',
-  header_contacts: '',
+  // Stamp printed at the top of the note (defaults copy the client's paper form)
+  header_prefix: 'معــــرض',
+  header_title: 'بن زرعه', // used when there is no logo image
+  header_activity: 'لبيــع\nوشراء السيارات',
+  header_owner: 'لصاحبه / عبدالله أحمد حسن العمري',
+  header_license: 'ترخيص رقم ١٠٧ - س.ت ٥٨٠٦٠٠٨٥٦٦',
+  header_contacts: 'هاتف : ٠١٧ ٧٢٨٢٩٦٦ - ص.ب ١٦ - جوال: ٠٥٠٣٧٨١٠٣٥ - ٠٥٠٤٥٨٨٧٢١',
   logo: '', // data URL
-  city: '',
-  creditor_name: '', // default "الطرف الأول"
+  logo_seeded: '0', // set to 1 once the bundled default logo was loaded
+  city: 'المخواة',
+  creditor_name: 'عبدالله أحمد حسن العمري', // default "الطرف الأول"
   footer_text:
-    'هذا السند واجب الدفع بموجب قرار مجلس الوزراء الموقر رقم 693 وتاريخ 26 / 9 / 1383 هـ المتوج بالمرسوم الملكي الكريم رقم 37 وتاريخ 11 / 10 / 1383 هـ ( الخاص بتنظيم الأوراق التجارية )',
+    'هذا السند واجب الدفع بموجب قرار مجلس الوزراء الموقر رقم ٦٩٣ وتاريخ ٢٦ / ٩ / ١٣٨٣ هـ\nالمتوج بالمرسوم الملكي الكريم رقم ٣٧ وتاريخ ١١ / ١٠ / ١٣٨٣ هـ ( الخاص بتنظيم الأوراق التجارية )',
   // Printing
-  paper: 'A4', // A4 | A5 | custom
+  paper: 'A4', // A4 | A5 | letter | custom
   paper_width_mm: '210',
   paper_height_mm: '297',
   offset_x_mm: '0',
