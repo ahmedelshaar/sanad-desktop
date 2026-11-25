@@ -12,11 +12,10 @@
     "start": "electron .",
     "dist": "vite build && electron-builder --win --x64",
     "test": "node --test tests/*.test.*",
-    "postinstall": "electron-builder install-app-deps"
+    "dist:zip": "vite build && electron-builder --win zip --x64"
   },
   "dependencies": {
     "@fontsource/cairo": "^5.3.0",
-    "better-sqlite3": "^13.2.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
@@ -41,12 +40,20 @@
       "package.json"
     ],
     "win": {
-      "target": "nsis"
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "shortcutName": "Sanad - سندات"
-    }
+    },
+    "npmRebuild": false,
+    "asarUnpack": [
+      "electron/assets/**"
+    ]
   }
 }

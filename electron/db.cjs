@@ -1,7 +1,22 @@
-// Database layer (SQLite via better-sqlite3).
+// Database layer (SQLite built into Node/Electron: node:sqlite — no native add-on to rebuild).
 // Kept free of Electron imports so it can be tested with plain Node.
 
-const Database = require('better-sqlite3');
+const { DatabaseSync } = require('node:sqlite');
+
+// Wraps fn in BEGIN/COMMIT, rolling back on error.
+function transaction(db, fn) {
+  return (...args) => {
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      const result = fn(...args);
+      db.exec('COMMIT');
+      return result;
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+  };
+}
 
 const DEFAULT_SETTINGS = {
   ui_lang: 'ar',
@@ -61,9 +76,9 @@ function seqLabel(seq, count) {
 }
 
 function openDb(file) {
-  const db = new Database(file);
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
+  const db = new DatabaseSync(file);
+  if (file !== ':memory:') db.exec('PRAGMA journal_mode = WAL');
+  db.exec('PRAGMA foreign_keys = ON');
   migrate(db);
   return createRepo(db);
 }
@@ -151,7 +166,7 @@ function createRepo(db) {
     const stmt = db.prepare(
       'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
     );
-    db.transaction(() => {
+    transaction(db, () => {
       for (const [k, v] of Object.entries(values || {})) {
         if (!(k in DEFAULT_SETTINGS)) continue;
         stmt.run(k, v == null ? '' : String(v));
@@ -182,7 +197,7 @@ function createRepo(db) {
     const info = db
       .prepare('INSERT INTO books (name, count, notes) VALUES (?, ?, ?)')
       .run(String(name).trim(), n, notes || null);
-    return getBook(info.lastInsertRowid);
+    return getBook(Number(info.lastInsertRowid));
   }
 
   function setBookStatus(id, status) {
@@ -281,7 +296,7 @@ function createRepo(db) {
   }
 
   // The number is reserved inside one transaction, so two saves can never get the same number.
-  const createVoucherTx = db.transaction((bookId, data) => {
+  const createVoucherTx = transaction(db, (bookId, data) => {
     const book = db.prepare('SELECT * FROM books WHERE id = ?').get(bookId);
     if (!book) throw new Error('BOOK_NOT_FOUND');
     if (book.status !== 'open') throw new Error('BOOK_CLOSED');
@@ -302,7 +317,7 @@ function createRepo(db) {
 
     if (seq === book.count) db.prepare("UPDATE books SET status = 'closed' WHERE id = ?").run(bookId);
     saveParties(data);
-    return info.lastInsertRowid;
+    return Number(info.lastInsertRowid);
   });
 
   function createVoucher(bookId, data) {
@@ -317,7 +332,7 @@ function createRepo(db) {
     if (existing.status === 'cancelled') throw new Error('VOUCHER_CANCELLED');
     const row = pick(data);
     const cols = Object.keys(row);
-    db.transaction(() => {
+    transaction(db, () => {
       db.prepare(
         `UPDATE vouchers SET ${cols.map((c) => `${c} = @${c}`).join(', ')},
          updated_at = datetime('now','localtime') WHERE id = @id`
@@ -370,7 +385,8 @@ function createRepo(db) {
   }
 
   function backup(file) {
-    return db.backup(file);
+    db.prepare('VACUUM INTO ?').run(file);
+    return file;
   }
 
   return {
