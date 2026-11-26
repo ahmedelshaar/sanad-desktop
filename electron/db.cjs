@@ -28,13 +28,14 @@ const DEFAULT_SETTINGS = {
   header_license: 'ترخيص رقم ١٠٧ - س.ت ٥٨٠٦٠٠٨٥٦٦',
   header_contacts: 'هاتف : ٠١٧ ٧٢٨٢٩٦٦ - ص.ب ١٦ - جوال: ٠٥٠٣٧٨١٠٣٥ - ٠٥٠٤٥٨٨٧٢١',
   logo: '', // data URL
-  logo_seeded: '0', // set to 1 once the bundled default logo was loaded
+  logo_seeded: '0',
+  paper_a5l_set: '1', // marker for the one-time A5 -> A5 landscape switch // set to 1 once the bundled default logo was loaded
   city: 'المخواة',
   creditor_name: 'عبدالله أحمد حسن العمري', // default "الطرف الأول"
   footer_text:
     'هذا السند واجب الدفع بموجب قرار مجلس الوزراء الموقر رقم ٦٩٣ وتاريخ ٢٦ / ٩ / ١٣٨٣ هـ\nالمتوج بالمرسوم الملكي الكريم رقم ٣٧ وتاريخ ١١ / ١٠ / ١٣٨٣ هـ ( الخاص بتنظيم الأوراق التجارية )',
   // Printing
-  paper: 'A5', // A4 | A5 | letter | custom
+  paper: 'A5L', // A5L (A5 landscape) | A5 | A4 | letter | custom
   paper_width_mm: '148',
   paper_height_mm: '210',
   offset_x_mm: '0',
@@ -153,6 +154,12 @@ function migrate(db) {
   const bookCols = db.prepare('PRAGMA table_info(books)').all().map((c) => c.name);
   if (!bookCols.includes('kind')) db.exec("ALTER TABLE books ADD COLUMN kind TEXT NOT NULL DEFAULT 'manual'");
   if (!bookCols.includes('plan')) db.exec('ALTER TABLE books ADD COLUMN plan TEXT');
+
+  // One time: copies that were set to A5 portrait before A5 landscape existed move to A5 landscape.
+  const hadA5L = db.prepare("SELECT 1 FROM settings WHERE key = 'paper_a5l_set'").get();
+  if (!hadA5L) {
+    db.prepare("UPDATE settings SET value = 'A5L' WHERE key = 'paper' AND value = 'A5'").run();
+  }
 
   const insert = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
   for (const [k, v] of Object.entries(DEFAULT_SETTINGS)) insert.run(k, v);

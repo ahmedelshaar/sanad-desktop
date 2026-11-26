@@ -58,7 +58,7 @@ test('validation and customers', () => {
 
 test('settings and print counter', () => {
   const repo = openDb(':memory:');
-  assert.equal(repo.getSettings().paper, 'A5');
+  assert.equal(repo.getSettings().paper, 'A5L');
   repo.saveSettings({ city: 'المخواة', unknown_key: 'x' });
   const s = repo.getSettings();
   assert.equal(s.city, 'المخواة');

@@ -137,8 +137,9 @@ export default function Settings({ settings, onSaved }) {
             <label>
               {t('paper')}
               <select value={s.paper} onChange={(e) => set({ paper: e.target.value })}>
+                <option value="A5L">{t('paper_a5l')}</option>
+                <option value="A5">{t('paper_a5')}</option>
                 <option value="A4">A4</option>
-                <option value="A5">A5</option>
                 <option value="letter">{t('paper_letter')}</option>
                 <option value="custom">{t('paper_custom')}</option>
               </select>
