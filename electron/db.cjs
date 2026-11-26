@@ -149,6 +149,11 @@ function migrate(db) {
     CREATE INDEX IF NOT EXISTS idx_vouchers_debtor_id ON vouchers(debtor_id_number);
   `);
 
+  // Added later: installment books keep their plan.
+  const bookCols = db.prepare('PRAGMA table_info(books)').all().map((c) => c.name);
+  if (!bookCols.includes('kind')) db.exec("ALTER TABLE books ADD COLUMN kind TEXT NOT NULL DEFAULT 'manual'");
+  if (!bookCols.includes('plan')) db.exec('ALTER TABLE books ADD COLUMN plan TEXT');
+
   const insert = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
   for (const [k, v] of Object.entries(DEFAULT_SETTINGS)) insert.run(k, v);
 }
@@ -320,6 +325,42 @@ function createRepo(db) {
     return Number(info.lastInsertRowid);
   });
 
+  /**
+   * Creates an installment book and all its notes at once (all or nothing).
+   * data: { name, notes, plan: {years, months, period, total, first_due}, common: {voucher fields},
+   *         items: [{ due_date, amount, amount_words }] }
+   */
+  const createInstallmentBookTx = transaction(db, (data) => {
+    const items = Array.isArray(data.items) ? data.items : [];
+    if (!data.name || !String(data.name).trim()) throw new Error('BOOK_NAME_REQUIRED');
+    if (items.length < 1 || items.length > 1000) throw new Error('PLAN_INVALID');
+    const common = data.common || {};
+    if (!common.debtor_name || !String(common.debtor_name).trim()) throw new Error('DEBTOR_REQUIRED');
+    const sumCents = items.reduce((a, i) => a + Math.round(Number(i.amount) * 100), 0);
+    const totalCents = Math.round(Number(data.plan && data.plan.total) * 100);
+    if (!(sumCents > 0) || sumCents !== totalCents) throw new Error('PLAN_INVALID');
+    if (items.some((i) => !(Number(i.amount) > 0) || !i.due_date)) throw new Error('PLAN_INVALID');
+
+    const info = db
+      .prepare("INSERT INTO books (name, count, notes, kind, plan, status) VALUES (?, ?, ?, 'installments', ?, 'closed')")
+      .run(String(data.name).trim(), items.length, data.notes || null, JSON.stringify(data.plan || {}));
+    const bookId = Number(info.lastInsertRowid);
+
+    items.forEach((item, i) => {
+      const row = pick({ ...common, due_date: item.due_date, amount: item.amount, amount_words: item.amount_words });
+      const cols = Object.keys(row);
+      db.prepare(
+        `INSERT INTO vouchers (book_id, seq, ${cols.join(', ')}) VALUES (@book_id, @seq, ${cols.map((c) => '@' + c).join(', ')})`
+      ).run({ ...row, book_id: bookId, seq: i + 1 });
+    });
+    saveParties(common);
+    return bookId;
+  });
+
+  function createInstallmentBook(data) {
+    return getBook(createInstallmentBookTx(data));
+  }
+
   function createVoucher(bookId, data) {
     validate(data);
     return getVoucher(createVoucherTx(bookId, data));
@@ -400,6 +441,7 @@ function createRepo(db) {
     nextNumber,
     searchCustomers,
     createVoucher,
+    createInstallmentBook,
     updateVoucher,
     cancelVoucher,
     markPrinted,

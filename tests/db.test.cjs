@@ -98,3 +98,31 @@ test('backup can be inspected and restored', () => {
   assert.equal(repo.nextNumber(book.id).label, '02');
   repo.close();
 });
+
+test('installment book creates all notes in one go', () => {
+  const repo = openDb(':memory:');
+  const items = [1, 2, 3].map((n) => ({ due_date: `2027-0${n}-01`, amount: n === 3 ? 3334 : 3333, amount_words: 'x' }));
+  const book = repo.createInstallmentBook({
+    name: 'أقساط محمد',
+    plan: { years: 0, months: 3, period: 1, total: 10000, first_due: '2027-01-01' },
+    common: { debtor_name: 'محمد', debtor_id_number: '1012345678', guarantor_name: 'سعيد', issue_date: '2026-12-01' },
+    items,
+  });
+  assert.equal(book.kind, 'installments');
+  assert.equal(book.count, 3);
+  assert.equal(book.used, 3);
+  assert.equal(book.status, 'closed');
+  const list = repo.listVouchers({ bookId: book.id }).reverse();
+  assert.deepEqual(list.map((v) => v.number_label), ['01', '02', '03']);
+  assert.equal(list[2].amount, 3334);
+  assert.equal(list[0].guarantor_name, 'سعيد');
+  assert.equal(list[1].due_date, '2027-02-01');
+  assert.equal(repo.searchCustomers('1012').length, 1);
+
+  // sum must match the total, otherwise nothing is saved
+  assert.throws(
+    () => repo.createInstallmentBook({ name: 'x', plan: { total: 999 }, common: { debtor_name: 'a' }, items }),
+    /PLAN_INVALID/
+  );
+  assert.equal(repo.listBooks().length, 1);
+});
