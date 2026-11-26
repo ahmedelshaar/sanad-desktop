@@ -63,15 +63,16 @@ function pageSizeFromSettings(s) {
   return { width: w, height: h }; // microns
 }
 
-// Renders the voucher in a hidden window and waits until React says it is ready.
-function renderForPrint(voucherId) {
+// Renders a print route (#/print/<id> or #/print-book/<id>) in a hidden window and waits
+// until React says it is ready.
+function renderForPrint(route) {
   return new Promise((resolve, reject) => {
     const win = new BrowserWindow({ show: false, width: 900, height: 1200, webPreferences: webPrefs() });
     const timer = setTimeout(() => {
       cleanup();
       win.destroy();
       reject(new Error('PRINT_TIMEOUT'));
-    }, 15000);
+    }, 60000);
     const onReady = (event) => {
       if (event.sender !== win.webContents) return;
       cleanup();
@@ -82,14 +83,37 @@ function renderForPrint(voucherId) {
       ipcMain.removeListener('print:ready', onReady);
     }
     ipcMain.on('print:ready', onReady);
-    loadApp(win, `/print/${voucherId}`);
+    loadApp(win, route);
   });
 }
 
-async function printVoucher(voucherId, mode) {
+function printVoucher(voucherId, mode) {
+  const v = repo.getVoucher(voucherId);
+  if (!v) throw new Error('VOUCHER_NOT_FOUND');
+  return printJob({
+    route: `/print/${voucherId}`,
+    ids: [voucherId],
+    fileName: `sanad-${v.book_name}-${v.number_label}.pdf`,
+    mode,
+  });
+}
+
+// All active notes of a book: one PDF / one print job, one page per note.
+function printBook(bookId, mode) {
+  const book = repo.getBook(bookId);
+  if (!book) throw new Error('BOOK_NOT_FOUND');
+  const ids = repo
+    .listVouchers({ bookId, status: 'active' })
+    .map((v) => v.id)
+    .reverse();
+  if (!ids.length) throw new Error('BOOK_EMPTY');
+  return printJob({ route: `/print-book/${bookId}`, ids, fileName: `sanad-${book.name}.pdf`, mode });
+}
+
+async function printJob({ route, ids, fileName, mode }) {
   const settings = repo.getSettings();
   const pageSize = pageSizeFromSettings(settings);
-  const win = await renderForPrint(voucherId);
+  const win = await renderForPrint(route);
   try {
     if (mode === 'print') {
       const ok = await new Promise((resolve) => {
@@ -104,7 +128,7 @@ async function printVoucher(voucherId, mode) {
           (success, reason) => resolve(success || reason)
         );
       });
-      if (ok === true) repo.markPrinted(voucherId);
+      if (ok === true) ids.forEach((id) => repo.markPrinted(id));
       return { ok: ok === true, reason: ok === true ? null : ok };
     }
 
@@ -115,9 +139,8 @@ async function printVoucher(voucherId, mode) {
     });
 
     if (mode === 'pdf') {
-      const v = repo.getVoucher(voucherId);
       const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-        defaultPath: `sanad-${v.book_name}-${v.number_label}.pdf`,
+        defaultPath: fileName,
         filters: [{ name: 'PDF', extensions: ['pdf'] }],
       });
       if (canceled || !filePath) return { ok: false, reason: 'cancelled' };
@@ -126,7 +149,7 @@ async function printVoucher(voucherId, mode) {
     }
 
     // preview
-    const file = path.join(os.tmpdir(), `sanad-preview-${voucherId}-${Date.now()}.pdf`);
+    const file = path.join(os.tmpdir(), `sanad-preview-${Date.now()}.pdf`);
     fs.writeFileSync(file, pdf);
     const preview = new BrowserWindow({
       width: 900,
@@ -234,6 +257,8 @@ function registerIpc() {
   handle('vouchers:update', (id, data) => repo.updateVoucher(id, data));
   handle('vouchers:cancel', (id, reason) => repo.cancelVoucher(id, reason));
   handle('vouchers:print', (id, mode) => printVoucher(id, mode || 'print'));
+  handle('books:print', (id, mode) => printBook(id, mode || 'print'));
+  handle('books:createInstallments', (data) => repo.createInstallmentBook(data));
 }
 
 app.whenReady().then(() => {

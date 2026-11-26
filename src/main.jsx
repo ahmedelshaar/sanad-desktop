@@ -5,10 +5,11 @@ import '@fontsource/cairo/700.css';
 import '@fontsource/cairo/800.css';
 import './styles.css';
 import App from './App.jsx';
-import VoucherPrint from './print/VoucherPrint.jsx';
+import VoucherPrint, { BookPrint } from './print/VoucherPrint.jsx';
 
 const printMatch = window.location.hash.match(/^#\/print\/(\d+)/);
+const bookMatch = window.location.hash.match(/^#\/print-book\/(\d+)/);
 
 createRoot(document.getElementById('root')).render(
-  printMatch ? <VoucherPrint id={printMatch[1]} /> : <App />
+  printMatch ? <VoucherPrint id={printMatch[1]} /> : bookMatch ? <BookPrint bookId={bookMatch[1]} /> : <App />
 );

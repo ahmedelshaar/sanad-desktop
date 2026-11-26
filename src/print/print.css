@@ -15,6 +15,10 @@ body.print-mode {
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
+.sheet + .sheet {
+  break-before: page;
+  page-break-before: always;
+}
 .sheet-form {
   position: absolute;
   left: 0;

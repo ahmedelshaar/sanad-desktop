@@ -97,6 +97,18 @@ export function createMock() {
         b.status = status;
         return ok(bookView(b));
       },
+      print: () => {
+        window.print();
+        return ok({ ok: true });
+      },
+      createInstallments: (data) => {
+        const b = { id: books.length + 1, name: data.name, count: data.items.length, status: 'closed', kind: 'installments', created_at: new Date().toISOString() };
+        books.push(b);
+        data.items.forEach((it, i) =>
+          vouchers.push({ ...data.common, ...it, id: vouchers.length + 1, book_id: b.id, seq: i + 1, status: 'active', print_count: 0 })
+        );
+        return ok(bookView(b));
+      },
       next: (id) => {
         const b = bookView(books.find((x) => x.id === id));
         return ok({ book: b, seq: b.used + 1, label: pad(b.used + 1, b.count), full: b.used >= b.count });
@@ -104,7 +116,8 @@ export function createMock() {
     },
     customers: { search: () => ok([]) },
     vouchers: {
-      list: () => ok(vouchers.map(voucherView).reverse()),
+      list: (f = {}) =>
+        ok(vouchers.filter((v) => !f.bookId || v.book_id === f.bookId).map(voucherView).reverse()),
       get: (id) => ok(voucherView(vouchers.find((v) => v.id === Number(id)) || vouchers[0])),
       create: (bookId, data) => {
         const b = bookView(books.find((x) => x.id === bookId));

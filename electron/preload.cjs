@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld('sanad', {
     create: (data) => call('books:create', data),
     setStatus: (id, status) => call('books:setStatus', id, status),
     next: (id) => call('books:next', id),
+    print: (id, mode) => call('books:print', id, mode),
+    createInstallments: (data) => call('books:createInstallments', data),
   },
   customers: { search: (q) => call('customers:search', q) },
   vouchers: {

@@ -72,6 +72,44 @@ export function VoucherSheet({ voucher, settings: s }) {
   );
 }
 
+function waitThenSignalReady() {
+  // Wait for fonts and images so the print is never captured half-drawn.
+  const imgs = Array.from(document.images).map((img) =>
+    img.complete ? Promise.resolve() : new Promise((r) => (img.onload = img.onerror = r))
+  );
+  Promise.all([document.fonts.ready, ...imgs]).then(() =>
+    setTimeout(() => requestAnimationFrame(() => api.printReady()), 50)
+  );
+}
+
+// Every active note of a book, one page each, for one PDF or one print job.
+export function BookPrint({ bookId }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    document.body.classList.add('print-mode');
+    Promise.all([api.vouchers.list({ bookId: Number(bookId), status: 'active' }), api.settings.get()])
+      .then(([list, settings]) => setData({ list: [...list].reverse(), settings }))
+      .catch((e) => setError(e.message));
+    return () => document.body.classList.remove('print-mode');
+  }, [bookId]);
+
+  useEffect(() => {
+    if (data) waitThenSignalReady();
+  }, [data]);
+
+  if (error) return <div style={{ padding: 20 }}>{error}</div>;
+  if (!data) return null;
+  return (
+    <>
+      {data.list.map((v) => (
+        <VoucherSheet key={v.id} voucher={v} settings={data.settings} />
+      ))}
+    </>
+  );
+}
+
 export default function VoucherPrint({ id }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -85,14 +123,7 @@ export default function VoucherPrint({ id }) {
   }, [id]);
 
   useEffect(() => {
-    if (!data) return;
-    // Wait for fonts and images so the print is never captured half-drawn.
-    const imgs = Array.from(document.images).map((img) =>
-      img.complete ? Promise.resolve() : new Promise((r) => (img.onload = img.onerror = r))
-    );
-    Promise.all([document.fonts.ready, ...imgs]).then(() =>
-      setTimeout(() => requestAnimationFrame(() => api.printReady()), 50)
-    );
+    if (data) waitThenSignalReady();
   }, [data]);
 
   if (error) return <div style={{ padding: 20 }}>{error}</div>;
