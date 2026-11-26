@@ -12,6 +12,8 @@ A desktop app for issuing and printing promissory notes (سند لأمر) in num
 | دفاتر بعدد سندات محدد (مثلا 60)، وكل سند ياخد رقمه تلقائيا: 01 من 60 | Books with a fixed count (e.g. 60); each note gets its number automatically: 01 of 60 |
 | الرقم يتحجز داخل transaction فمستحيل يتكرر، والسند الملغي يحتفظ برقمه | Numbers are reserved in a transaction (never duplicated); cancelled notes keep their number |
 | الدفتر يتقفل تلقائيا لما يخلص | A book closes automatically when full |
+| دفتر أقساط: مدة (سنين وشهور) + دورية من كل شهر لكل 12 شهر + إجمالي، فيحسب القسط ويولد سند لكل قسط | Installment book: duration (years + months) + period (every 1 to 12 months) + total; computes each installment and creates one note per installment |
+| طباعة الدفتر كله مرة واحدة أو PDF واحد، أو كل سند لوحده | Print the whole book at once or as one PDF, or each note on its own |
 | تفقيط المبلغ تلقائيا (ريال وهللة) | Amount written in Arabic words automatically (riyals and halalas) |
 | التاريخ الهجري (أم القرى) يتحسب تلقائيا | Hijri date (Umm al-Qura) calculated automatically |
 | حفظ بيانات العملاء والكفلاء واسترجاعها بالبحث | Customers and guarantors are saved and searchable |

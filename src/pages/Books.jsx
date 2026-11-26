@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { useI18n, errorText } from '../i18n.js';
 
-export default function Books({ onNewVoucher }) {
+export default function Books({ onNewVoucher, onOpenBook }) {
   const { t } = useI18n();
   const [books, setBooks] = useState([]);
   const [form, setForm] = useState({ name: '', count: 60, notes: '' });
@@ -19,6 +19,16 @@ export default function Books({ onNewVoucher }) {
     try {
       await api.books.create(form);
       setForm({ name: '', count: form.count, notes: '' });
+      load();
+    } catch (err) {
+      setMsg({ type: 'error', text: errorText(t, err.message) });
+    }
+  };
+
+  const printAll = async (id) => {
+    setMsg(null);
+    try {
+      await api.books.print(id, 'print');
       load();
     } catch (err) {
       setMsg({ type: 'error', text: errorText(t, err.message) });
@@ -92,6 +102,7 @@ export default function Books({ onNewVoucher }) {
                 <tr key={b.id}>
                   <td>
                     <b>{b.name}</b>
+                    {b.kind === 'installments' && <span className="badge kind">{t('book_kind_installments')}</span>}
                   </td>
                   <td>{b.count}</td>
                   <td>
@@ -107,6 +118,16 @@ export default function Books({ onNewVoucher }) {
                   </td>
                   <td className="muted">{String(b.created_at).slice(0, 10)}</td>
                   <td className="row-actions">
+                    {b.used > 0 && (
+                      <>
+                        <button className="btn small" onClick={() => onOpenBook(b.id)}>
+                          {t('book_view_notes')}
+                        </button>
+                        <button className="btn small" onClick={() => printAll(b.id)}>
+                          {t('book_print_all')}
+                        </button>
+                      </>
+                    )}
                     {b.status === 'open' && (
                       <button className="btn small primary" onClick={onNewVoucher}>
                         {t('nav_new')}

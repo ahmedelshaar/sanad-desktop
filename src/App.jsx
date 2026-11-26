@@ -5,6 +5,7 @@ import Books from './pages/Books.jsx';
 import VoucherForm from './pages/VoucherForm.jsx';
 import Vouchers from './pages/Vouchers.jsx';
 import Settings from './pages/Settings.jsx';
+import Installments from './pages/Installments.jsx';
 import appIcon from '../electron/assets/icon.png';
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
 
   const nav = [
     ['new', 'nav_new'],
+    ['installments', 'nav_installments'],
     ['list', 'nav_vouchers'],
     ['books', 'nav_books'],
     ['settings', 'nav_settings'],
@@ -88,8 +90,15 @@ export default function App() {
           {page.name === 'edit' && (
             <VoucherForm key={`edit-${page.id}`} id={page.id} settings={settings} onNew={() => go('new')} />
           )}
-          {page.name === 'list' && <Vouchers onEdit={(id) => go('edit', { id })} />}
-          {page.name === 'books' && <Books onNewVoucher={() => go('new')} />}
+          {page.name === 'installments' && (
+            <Installments settings={settings} onOpenBook={(bookId) => go('list', { bookId })} />
+          )}
+          {page.name === 'list' && (
+            <Vouchers key={`list-${page.bookId || ''}`} bookId={page.bookId} onEdit={(id) => go('edit', { id })} />
+          )}
+          {page.name === 'books' && (
+            <Books onNewVoucher={() => go('new')} onOpenBook={(bookId) => go('list', { bookId })} />
+          )}
           {page.name === 'settings' && <Settings settings={settings} onSaved={setSettings} />}
         </main>
       </div>

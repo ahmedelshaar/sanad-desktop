@@ -3,11 +3,11 @@ import { api } from '../api.js';
 import { useI18n, errorText } from '../i18n.js';
 import { formatMoney, gregorianText } from '../lib/format.js';
 
-export default function Vouchers({ onEdit }) {
+export default function Vouchers({ onEdit, bookId }) {
   const { t } = useI18n();
   const [list, setList] = useState([]);
   const [books, setBooks] = useState([]);
-  const [filters, setFilters] = useState({ q: '', bookId: '', status: '' });
+  const [filters, setFilters] = useState({ q: '', bookId: bookId ? String(bookId) : '', status: '' });
   const [msg, setMsg] = useState(null);
 
   const load = () =>
@@ -70,6 +70,20 @@ export default function Vouchers({ onEdit }) {
           <option value="cancelled">{t('status_cancelled')}</option>
         </select>
       </div>
+
+      {filters.bookId && (
+        <div className="actions" style={{ marginBottom: 16 }}>
+          <button className="btn primary" onClick={() => run(() => api.books.print(Number(filters.bookId), 'print'))}>
+            {t('inst_print_all')}
+          </button>
+          <button className="btn" onClick={() => run(() => api.books.print(Number(filters.bookId), 'pdf'))}>
+            {t('inst_pdf_all')}
+          </button>
+          <button className="btn" onClick={() => run(() => api.books.print(Number(filters.bookId), 'preview'))}>
+            {t('preview')}
+          </button>
+        </div>
+      )}
 
       {msg && <div className="alert error">{msg}</div>}
 

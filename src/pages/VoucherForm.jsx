@@ -29,7 +29,7 @@ const EMPTY = {
   notes: '',
 };
 
-function CustomerSearch({ onPick }) {
+export function CustomerSearch({ onPick }) {
   const { t } = useI18n();
   const [q, setQ] = useState('');
   const [items, setItems] = useState([]);
@@ -73,7 +73,7 @@ function CustomerSearch({ onPick }) {
   );
 }
 
-function PartyFields({ prefix, data, set, withSearch = true }) {
+export function PartyFields({ prefix, data, set, withSearch = true }) {
   const { t } = useI18n();
   const f = (name) => `${prefix}_${name}`;
   const pick = (c) =>
