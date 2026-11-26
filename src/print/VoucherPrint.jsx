@@ -7,6 +7,7 @@ import './print.css';
 
 export function paperSize(s) {
   if (s.paper === 'A5') return { w: 148, h: 210 };
+  if (s.paper === 'A5L') return { w: 210, h: 148 };
   if (s.paper === 'letter') return { w: FORM_W, h: FORM_H };
   if (s.paper === 'custom') {
     const w = parseFloat(s.paper_width_mm);
@@ -57,15 +58,25 @@ export function VoucherSheet({ voucher, settings: s }) {
   // Printed area of the form (stamp + body) in form mm: x 47.9..178.3, y 23.6..250.5.
   // On Letter paper the form keeps its original position; on other paper the printed area is
   // centred, and shrunk only if the paper is too small for it (e.g. A5).
-  const fitK = Math.min(1, (w - 8) / 130.4, (h - 8) / 226.9);
-  const k = fitK * (parseFloat(s.scale) || 1);
-  const dx = s.paper === 'letter' ? ox : w / 2 - 113.1 * k + ox;
-  const dy = s.paper === 'letter' ? oy : h / 2 - 137.05 * k + oy;
-  const scale = k;
+  let transform;
+  if (s.paper === 'A5L') {
+    // Landscape: turn the whole form 90deg so the note reads normally (stamp on the left side,
+    // as on the paper). Printed area in that view: u 23.6..230, v 37.4..168.3 mm.
+    const k = Math.min(1, (w - 4) / 206.4, (h - 4) / 130.9) * (parseFloat(s.scale) || 1);
+    const cx = w / 2 - 126.8 * k + ox;
+    const cy = h / 2 - 102.85 * k + oy;
+    transform = `translate(${cx}mm, ${cy}mm) scale(${k}) translate(0, ${FORM_W}mm) rotate(-90deg)`;
+  } else {
+    const fitK = Math.min(1, (w - 8) / 130.4, (h - 8) / 226.9);
+    const k = fitK * (parseFloat(s.scale) || 1);
+    const dx = s.paper === 'letter' ? ox : w / 2 - 113.1 * k + ox;
+    const dy = s.paper === 'letter' ? oy : h / 2 - 137.05 * k + oy;
+    transform = `translate(${dx}mm, ${dy}mm) scale(${k})`;
+  }
   return (
     <div className="sheet" style={{ width: `${w}mm`, height: `${h}mm` }}>
       <style>{`@page { size: ${w}mm ${h}mm; margin: 0; }`}</style>
-      <div className="sheet-form" style={{ transform: `translate(${dx}mm, ${dy}mm) scale(${scale})` }}>
+      <div className="sheet-form" style={{ transform }}>
         <PaperForm s={s} v={formValues(voucher, s)} />
       </div>
     </div>

@@ -57,6 +57,7 @@ function seedDefaultLogo() {
 // ---------- printing ----------
 function pageSizeFromSettings(s) {
   if (s.paper === 'A4' || s.paper === 'A5') return s.paper;
+  if (s.paper === 'A5L') return 'A5'; // printed with landscape: true
   const w = Math.round(parseFloat(s.paper_width_mm) * 1000);
   const h = Math.round(parseFloat(s.paper_height_mm) * 1000);
   if (!(w > 0 && h > 0)) return 'A4';
@@ -113,6 +114,7 @@ function printBook(bookId, mode) {
 async function printJob({ route, ids, fileName, mode }) {
   const settings = repo.getSettings();
   const pageSize = pageSizeFromSettings(settings);
+  const landscape = settings.paper === 'A5L';
   const win = await renderForPrint(route);
   try {
     if (mode === 'print') {
@@ -124,6 +126,7 @@ async function printJob({ route, ids, fileName, mode }) {
             printBackground: true,
             margins: { marginType: 'none' },
             pageSize,
+            landscape,
           },
           (success, reason) => resolve(success || reason)
         );
@@ -134,6 +137,7 @@ async function printJob({ route, ids, fileName, mode }) {
 
     const pdf = await win.webContents.printToPDF({
       pageSize,
+      landscape,
       printBackground: true,
       margins: { marginType: 'none' },
     });
