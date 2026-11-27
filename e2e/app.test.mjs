@@ -2,7 +2,7 @@
 // Run with: npm run test:e2e   (on Linux CI wrap with xvfb-run)
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { launch, closeApp, waitForPdf, existing, tid, typeDate, choose } from './helpers.mjs';
+import { launch, closeApp, waitForPdf, existing, tid, typeDate, choose, waitForCount } from './helpers.mjs';
 
 describe('Sanad desktop app', () => {
   let ctx;
@@ -194,8 +194,7 @@ describe('Sanad desktop app', () => {
   it('lists the installment notes with the right total', async () => {
     await page.locator(tid('inst-one-by-one')).click();
     const rows = page.locator(tid('vouchers-table')).locator('tbody tr');
-    await rows.first().waitFor();
-    assert.equal(await rows.count(), 8);
+    await waitForCount(rows, 8);
     assert.equal(await page.locator(tid('list-total')).innerText(), '60,000.00');
   });
 
@@ -242,25 +241,24 @@ describe('Sanad desktop app', () => {
     await page.locator(tid('void-reason')).fill('خطأ في البيانات');
     await page.locator(tid('void-confirm')).click();
     await page.locator('.toast', { hasText: 'تم إلغاء السند' }).waitFor();
+    await page.locator(tid(`row-${id}`)).locator('.badge.cancelled').waitFor();
     assert.match(await page.locator(tid(`row-${id}`)).innerText(), /ملغي/);
     assert.equal(await page.locator(tid('list-total')).innerText(), '52,500.00');
 
     await choose(page, 'filter-status', 'ملغي');
     const rows = page.locator(tid('vouchers-table')).locator('tbody tr');
-    await page.waitForTimeout(400);
-    assert.equal(await rows.count(), 1);
+    await waitForCount(rows, 1);
     await choose(page, 'filter-status', 'كل الحالات');
   });
 
   it('searches notes by name and by number', async () => {
     await choose(page, 'filter-book', 'كل الدفاتر');
+    const rows = page.locator(tid('vouchers-table')).locator('tbody tr');
     await page.locator(tid('list-search')).fill('سعيد');
-    await page.waitForTimeout(400);
     // guarantor of the 8 installment notes + debtor of note 03 in the first book
-    assert.equal(await page.locator(tid('vouchers-table')).locator('tbody tr').count(), 9);
+    await waitForCount(rows, 9);
     await page.locator(tid('list-search')).fill('03');
-    await page.waitForTimeout(400);
-    assert.equal(await page.locator(tid('vouchers-table')).locator('tbody tr').count(), 2);
+    await waitForCount(rows, 2);
     await page.locator(tid('list-search')).fill('');
   });
 

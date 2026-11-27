@@ -9,11 +9,11 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-export async function launch() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sanad-e2e-'));
+export async function launch({ env: extraEnv = {}, dir: existingDir } = {}) {
+  const dir = existingDir || fs.mkdtempSync(path.join(os.tmpdir(), 'sanad-e2e-'));
   const previews = path.join(dir, 'previews');
-  fs.mkdirSync(previews);
-  const env = { ...process.env, SANAD_USER_DATA: dir, SANAD_PREVIEW_DIR: previews };
+  fs.mkdirSync(previews, { recursive: true });
+  const env = { ...process.env, SANAD_USER_DATA: dir, SANAD_PREVIEW_DIR: previews, ...extraEnv };
   delete env.VITE_DEV_SERVER_URL;
   delete env.ELECTRON_RUN_AS_NODE;
 
@@ -25,16 +25,16 @@ export async function launch() {
   });
   const page = await app.firstWindow();
   await page.setViewportSize({ width: 1366, height: 900 });
-  await page.waitForSelector('.sidebar');
+  await page.waitForSelector(extraEnv.SANAD_LICENSE_API ? '.gate, .sidebar' : '.sidebar');
 
   return {
     app,
     page,
     dir,
     previews,
-    async close() {
+    async close({ keep = false } = {}) {
       await closeApp(this.app);
-      fs.rmSync(dir, { recursive: true, force: true });
+      if (!keep) fs.rmSync(dir, { recursive: true, force: true });
     },
   };
 }
@@ -84,4 +84,16 @@ export async function typeDate(page, testId, text) {
 export async function choose(page, testId, optionText) {
   await page.locator(tid(testId)).click();
   await page.getByRole('option', { name: optionText, exact: true }).click();
+}
+
+// Waits until a locator matches exactly n elements (lists refresh after a short debounce).
+export async function waitForCount(locator, n, timeout = 10000) {
+  const end = Date.now() + timeout;
+  let last = -1;
+  while (Date.now() < end) {
+    last = await locator.count();
+    if (last === n) return;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  throw new Error(`expected ${n} elements, found ${last}`);
 }
