@@ -28,7 +28,8 @@ A desktop app for issuing and printing promissory notes (سند لأمر) in num
 ```bash
 npm install        # يثبت المكتبات
 npm run dev        # تشغيل للتطوير (Vite + Electron)
-npm test           # اختبارات التفقيط والتواريخ والترقيم (Node 22.13+)
+npm test           # اختبارات الوحدات: التفقيط والتواريخ والتقويم والأقساط والترقيم (Node 22.13+)
+npm run test:e2e   # اختبارات على البرنامج الحقيقي (Electron) من أول إنشاء دفتر لحد PDF
 npm run dist       # ملف تثبيت ويندوز + نسخة zip في مجلد release/
 npm run dist:zip   # نسخة zip بس (تتبني كمان من Linux)
 ```

@@ -11,6 +11,9 @@ Desktop app (Electron + React/Vite + SQLite via built-in `node:sqlite`) for prom
 ## Commands
 - `npm run dev` — Vite on :5173 + Electron
 - `npm test` — node:test (Node 22.13+, uses built-in `node:sqlite`)
+- `npm run test:e2e` — builds, then drives the real Electron app with playwright-core (`e2e/app.test.mjs`).
+  Uses a throw-away data folder (`SANAD_USER_DATA`) and catches preview PDFs (`SANAD_PREVIEW_DIR`).
+  On Linux without a screen: `xvfb-run -a npm run test:e2e`.
 - `npm run dist:zip` — portable Windows zip (works from Linux too)
 - `npm run dist` — Windows installer in `release/`
 - `npx vite` alone opens the UI in a browser using `src/mockApi.js` (no Electron) — handy for layout work;
@@ -24,3 +27,12 @@ Desktop app (Electron + React/Vite + SQLite via built-in `node:sqlite`) for prom
 - `src/api.js` unwraps the result and throws `Error(code)`.
 - `src/print/VoucherPrint.jsx` — `VoucherSheet` is the print template (mm units), also used for the live
   preview in Settings. The print window calls `api.printReady()` once fonts and images load.
+
+## UI components (no native form controls)
+- `src/components/Select.jsx` — combobox/listbox, keyboard (arrows, Home/End, Enter, Escape, type-ahead).
+- `src/components/DateInput.jsx` — type dd/mm/yyyy (Arabic digits OK) or pick from a calendar that shows
+  the Hijri day under each date; week starts Sunday; arrow keys mirrored in RTL. Logic in `src/lib/calendar.js`.
+- `src/components/Switch.jsx` — replaces checkboxes.
+- `src/components/ui.jsx` — PageHeader, Section, Field (a div, so popover clicks are not re-sent like a label),
+  Alert, EmptyState, IconButton, toasts (`useToast`), `Ltr` (keeps numbers/dates in order inside Arabic text).
+- Give every control a `testId` / `data-testid` the e2e tests can target.
