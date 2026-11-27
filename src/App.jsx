@@ -6,7 +6,17 @@ import VoucherForm from './pages/VoucherForm.jsx';
 import Vouchers from './pages/Vouchers.jsx';
 import Settings from './pages/Settings.jsx';
 import Installments from './pages/Installments.jsx';
+import Icon from './components/Icon.jsx';
+import { ToastProvider } from './components/ui.jsx';
 import appIcon from '../electron/assets/icon.png';
+
+const NAV = [
+  ['new', 'nav_new', 'note'],
+  ['installments', 'nav_installments', 'layers'],
+  ['list', 'nav_vouchers', 'list'],
+  ['books', 'nav_books', 'book'],
+  ['settings', 'nav_settings', 'settings'],
+];
 
 export default function App() {
   const [settings, setSettings] = useState(null);
@@ -41,67 +51,75 @@ export default function App() {
 
   if (!settings) return null;
 
-  const nav = [
-    ['new', 'nav_new'],
-    ['installments', 'nav_installments'],
-    ['list', 'nav_vouchers'],
-    ['books', 'nav_books'],
-    ['settings', 'nav_settings'],
-  ];
-
   return (
     <I18nContext.Provider value={{ lang, t, setLang }}>
-      <div className="app">
-        <aside className="sidebar">
-          <div className="brand">
-            <img src={appIcon} alt="" />
-            {t('app_name')}
-          </div>
-          <nav>
-            {nav.map(([name, key]) => (
-              <button
-                key={name}
-                className={`nav-item ${page.name === name || (name === 'new' && page.name === 'edit') ? 'active' : ''}`}
-                onClick={() => go(name)}
-              >
-                {t(key)}
-              </button>
-            ))}
-          </nav>
-          <button className="lang" onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}>
-            {t('lang_toggle')}
-          </button>
-          <button className="credit" onClick={() => api.app.openSite()} title="eleva-protech.com">
-            <span className="credit-by">{t('developed_by')}</span>
-            <span className="credit-name">
-              Eleva <b>Pro Technology</b>
-            </span>
-            <span className="credit-link">eleva-protech.com</span>
-            {version ? (
-              <span className="credit-version">
-                {t('version')} {version}
+      <ToastProvider>
+        <div className="app">
+          <aside className="sidebar">
+            <div className="brand">
+              <img src={appIcon} alt="" />
+              <div>
+                <b>{t('app_name')}</b>
+                <small>Sanad</small>
+              </div>
+            </div>
+            <nav aria-label={t('app_name')}>
+              {NAV.map(([name, key, icon]) => {
+                const active = page.name === name || (name === 'new' && page.name === 'edit');
+                return (
+                  <button
+                    key={name}
+                    className={`nav-item ${active ? 'active' : ''}`}
+                    aria-current={active ? 'page' : undefined}
+                    data-testid={`nav-${name}`}
+                    onClick={() => go(name)}
+                  >
+                    <Icon name={icon} size={18} />
+                    {t(key)}
+                  </button>
+                );
+              })}
+            </nav>
+            <button className="lang" data-testid="lang-toggle" onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}>
+              <Icon name="globe" size={16} />
+              {t('lang_toggle')}
+            </button>
+            <button className="credit" onClick={() => api.app.openSite()} title="eleva-protech.com">
+              <span className="credit-by">{t('developed_by')}</span>
+              <span className="credit-name">
+                Eleva <b>Pro Technology</b>
               </span>
-            ) : null}
-          </button>
-        </aside>
+              <span className="credit-link">eleva-protech.com</span>
+              {version ? (
+                <span className="credit-version">
+                  {t('version')} {version}
+                </span>
+              ) : null}
+            </button>
+          </aside>
 
-        <main className="content">
-          {page.name === 'new' && <VoucherForm key={`new-${formKey}`} settings={settings} onNew={() => go('new')} />}
-          {page.name === 'edit' && (
-            <VoucherForm key={`edit-${page.id}`} id={page.id} settings={settings} onNew={() => go('new')} />
-          )}
-          {page.name === 'installments' && (
-            <Installments settings={settings} onOpenBook={(bookId) => go('list', { bookId })} />
-          )}
-          {page.name === 'list' && (
-            <Vouchers key={`list-${page.bookId || ''}`} bookId={page.bookId} onEdit={(id) => go('edit', { id })} />
-          )}
-          {page.name === 'books' && (
-            <Books onNewVoucher={() => go('new')} onOpenBook={(bookId) => go('list', { bookId })} />
-          )}
-          {page.name === 'settings' && <Settings settings={settings} onSaved={setSettings} />}
-        </main>
-      </div>
+          <main className="content">
+            {page.name === 'new' && <VoucherForm key={`new-${formKey}`} settings={settings} onNew={() => go('new')} />}
+            {page.name === 'edit' && (
+              <VoucherForm key={`edit-${page.id}`} id={page.id} settings={settings} onNew={() => go('new')} />
+            )}
+            {page.name === 'installments' && (
+              <Installments settings={settings} onOpenBook={(bookId) => go('list', { bookId })} />
+            )}
+            {page.name === 'list' && (
+              <Vouchers key={`list-${page.bookId || ''}`} bookId={page.bookId} onEdit={(id) => go('edit', { id })} />
+            )}
+            {page.name === 'books' && (
+              <Books
+                onNewVoucher={() => go('new')}
+                onNewInstallments={() => go('installments')}
+                onOpenBook={(bookId) => go('list', { bookId })}
+              />
+            )}
+            {page.name === 'settings' && <Settings settings={settings} onSaved={setSettings} />}
+          </main>
+        </div>
+      </ToastProvider>
     </I18nContext.Provider>
   );
 }
