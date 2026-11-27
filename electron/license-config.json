@@ -1,8 +1,13 @@
 {
   "_comment": "Licensing through ElevaHub (license-api Worker). apiUrl empty = licensing off. Before a release: set apiUrl to the Worker host and publicKeys to the PRODUCTION key; the test key (kid test-2026-11) is refused by scripts/check-license-config.cjs.",
-  "apiUrl": "",
+  "apiUrl": "https://license.eleva-protech.com",
   "product": "sanad",
-  "publicKeys": [],
+  "publicKeys": [
+    {
+      "kid": "eleva-2026-01",
+      "public_key": "s8tiq7Gwch6rFXH6mPWFy9a41tWvE/s9KKDsDhV4ASU="
+    }
+  ],
   "support": {
     "website": "https://eleva-protech.com",
     "email": "elshaar@eleva-protech.com"
