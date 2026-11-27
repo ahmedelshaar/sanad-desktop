@@ -307,12 +307,12 @@ describe('Sanad desktop app', () => {
     const { _electron } = await import('playwright-core');
     const { createRequire } = await import('node:module');
     const require = createRequire(import.meta.url);
-    const { ROOT } = await import('./helpers.mjs');
+    const { ROOT, APP } = await import('./helpers.mjs');
     const env = { ...process.env, SANAD_USER_DATA: dir, SANAD_PREVIEW_DIR: ctx.previews };
     delete env.VITE_DEV_SERVER_URL;
     ctx.app = await _electron.launch({
       executablePath: require('electron'),
-      args: [ROOT, ...(process.platform === 'linux' ? ['--no-sandbox'] : [])],
+      args: [APP, ...(process.platform === 'linux' ? ['--no-sandbox'] : [])],
       env,
     });
     page = await ctx.app.firstWindow();

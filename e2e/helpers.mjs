@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// The app folder to run: the source by default, or the obfuscated release code (.harden).
+export const APP = process.env.SANAD_E2E_APP ? path.resolve(ROOT, process.env.SANAD_E2E_APP) : ROOT;
 
 export async function launch({ env: extraEnv = {}, dir: existingDir } = {}) {
   const dir = existingDir || fs.mkdtempSync(path.join(os.tmpdir(), 'sanad-e2e-'));
@@ -19,7 +21,7 @@ export async function launch({ env: extraEnv = {}, dir: existingDir } = {}) {
 
   const app = await electron.launch({
     executablePath: require('electron'),
-    args: [ROOT, ...(process.platform === 'linux' ? ['--no-sandbox'] : [])],
+    args: [APP, ...(process.platform === 'linux' ? ['--no-sandbox'] : [])],
     cwd: ROOT,
     env,
   });

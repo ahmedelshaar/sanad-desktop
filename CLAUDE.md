@@ -38,7 +38,12 @@ Desktop app (Electron + React/Vite + SQLite via built-in `node:sqlite`) for prom
 - Locked: writes and printing refused in `main.cjs` (`LICENSE_LOCKED`); backups still work; restore keeps
   the license rows.
 - Env for tests: `SANAD_LICENSE_API`, `SANAD_LICENSE_KEYS`, `SANAD_FINGERPRINT`, `SANAD_HOSTNAME`;
-  `e2e/licenseServer.mjs` is a fake Worker.
+  `e2e/licenseServer.mjs` is a fake Worker. A packaged build ignores all of these (and `VITE_DEV_SERVER_URL`).
+- Hardening (release only): `scripts/harden.cjs` obfuscates `electron/` into `.harden/electron`, which is what
+  electron-builder packs; Electron fuses + embedded asar integrity in `package.json` (a changed `app.asar`
+  does not start; no RunAsNode, `--inspect` or NODE_OPTIONS); devtools off when packaged. License checked in
+  three places: IPC gate, data layer (`openDb(file, { guard })`), print path. `npm run test:e2e:hardened`
+  runs the e2e suite on the obfuscated code.
 
 ## UI components (no native form controls)
 - `src/components/Select.jsx` — combobox/listbox, keyboard (arrows, Home/End, Enter, Escape, type-ahead).

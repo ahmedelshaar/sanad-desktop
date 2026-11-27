@@ -10,11 +10,13 @@
     "dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
     "build": "vite build",
     "start": "electron .",
-    "dist": "node scripts/check-license-config.cjs && vite build && electron-builder --win --x64",
+    "dist": "node scripts/check-license-config.cjs && vite build && node scripts/harden.cjs && electron-builder --win --x64",
     "test": "node --test tests/*.test.*",
-    "dist:zip": "node scripts/check-license-config.cjs && vite build && electron-builder --win zip --x64",
+    "dist:zip": "node scripts/check-license-config.cjs && vite build && node scripts/harden.cjs && electron-builder --win zip --x64",
     "test:e2e": "vite build && node --test --test-concurrency=1 e2e/*.test.mjs",
-    "test:all": "npm test && npm run test:e2e"
+    "test:all": "npm test && npm run test:e2e",
+    "harden": "node scripts/harden.cjs",
+    "test:e2e:hardened": "vite build && node scripts/harden.cjs && cross-env SANAD_E2E_APP=.harden node --test --test-concurrency=1 e2e/*.test.mjs"
   },
   "dependencies": {
     "@fontsource/cairo": "^5.3.0",
@@ -27,6 +29,7 @@
     "cross-env": "^10.0.0",
     "electron": "^45.5.0",
     "electron-builder": "^26.18.0",
+    "javascript-obfuscator": "^5.10.1",
     "playwright-core": "^1.65.1",
     "vite": "^8.3.8",
     "wait-on": "^9.0.0"
@@ -39,8 +42,14 @@
     },
     "files": [
       "dist/**/*",
-      "electron/**/*",
-      "package.json"
+      "package.json",
+      {
+        "from": ".harden/electron",
+        "to": "electron",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "win": {
       "target": [
@@ -59,7 +68,17 @@
     "npmRebuild": false,
     "asarUnpack": [
       "electron/assets/**"
-    ]
+    ],
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true,
+      "grantFileProtocolExtraPrivileges": true
+    },
+    "asar": true
   },
   "homepage": "https://eleva-protech.com"
 }
