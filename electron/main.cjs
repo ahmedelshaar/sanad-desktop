@@ -153,7 +153,8 @@ async function printJob({ route, ids, fileName, mode }) {
     }
 
     // preview
-    const file = path.join(os.tmpdir(), `sanad-preview-${Date.now()}.pdf`);
+    const previewDir = process.env.SANAD_PREVIEW_DIR || os.tmpdir();
+    const file = path.join(previewDir, `sanad-preview-${Date.now()}.pdf`);
     fs.writeFileSync(file, pdf);
     const preview = new BrowserWindow({
       width: 900,
@@ -264,6 +265,9 @@ function registerIpc() {
   handle('books:print', (id, mode) => printBook(id, mode || 'print'));
   handle('books:createInstallments', (data) => repo.createInstallmentBook(data));
 }
+
+// Tests run the app against a throw-away data folder.
+if (process.env.SANAD_USER_DATA) app.setPath('userData', process.env.SANAD_USER_DATA);
 
 app.whenReady().then(() => {
   dbFile = path.join(app.getPath('userData'), 'sanad.db');
