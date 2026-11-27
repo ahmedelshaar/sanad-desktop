@@ -82,6 +82,11 @@ export function createMock() {
       info: () => ok({ version: '0.1.0' }),
       openSite: () => ok(window.open('https://eleva-protech.com', '_blank')),
     },
+    license: {
+      status: () => ok({ state: 'trial', usable: true, enabled: true, daysLeft: 12, email: 'demo@example.com', deviceId: 'dev_demo', fingerprint: 'snd_demo', support: {} }),
+      register: () => ok({ state: 'trial', usable: true, enabled: true, daysLeft: 14 }),
+      check: () => ok({ state: 'trial', usable: true, enabled: true, daysLeft: 12 }),
+    },
     printers: { list: () => ok([]) },
     backup: { create: () => ok(null), restore: () => ok(null) },
     books: {

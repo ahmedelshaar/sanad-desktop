@@ -9,6 +9,7 @@ import Select from '../components/Select.jsx';
 import Switch from '../components/Switch.jsx';
 import Icon from '../components/Icon.jsx';
 import { Alert, Field, PageHeader, Section, useToast } from '../components/ui.jsx';
+import { LicenseSection } from './License.jsx';
 
 const SAMPLE = {
   number_label: '01',
@@ -37,7 +38,7 @@ const SAMPLE = {
 const PREVIEW_W = 380; // px
 const PX_PER_MM = 96 / 25.4;
 
-export default function Settings({ settings, onSaved }) {
+export default function Settings({ settings, onSaved, license, onLicense }) {
   const { t } = useI18n();
   const toast = useToast();
   const [s, setS] = useState(settings);
@@ -212,6 +213,8 @@ export default function Settings({ settings, onSaved }) {
               </div>
             </div>
           </Section>
+
+          <LicenseSection license={license} onState={onLicense} />
 
           <Section icon="database" title={t('sec_backup')}>
             <div className="actions">

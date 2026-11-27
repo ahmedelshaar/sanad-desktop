@@ -22,5 +22,9 @@ function wrapAll(obj) {
   return out;
 }
 
-const { printReady, ...rest } = bridge;
-export const api = { ...wrapAll(rest), printReady: printReady || (() => {}) };
+const { printReady, onLicenseChanged, ...rest } = bridge;
+export const api = {
+  ...wrapAll(rest),
+  printReady: printReady || (() => {}),
+  onLicenseChanged: onLicenseChanged || (() => () => {}),
+};

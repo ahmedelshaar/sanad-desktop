@@ -8,6 +8,7 @@ import Settings from './pages/Settings.jsx';
 import Installments from './pages/Installments.jsx';
 import Icon from './components/Icon.jsx';
 import { ToastProvider } from './components/ui.jsx';
+import { LockScreen, RegisterScreen, TrialBanner } from './pages/License.jsx';
 import appIcon from '../electron/assets/icon.png';
 
 const NAV = [
@@ -23,6 +24,15 @@ export default function App() {
   const [page, setPage] = useState({ name: 'new' });
   const [formKey, setFormKey] = useState(0);
   const [version, setVersion] = useState('');
+  const [license, setLicense] = useState(null);
+
+  useEffect(() => {
+    api.license
+      .status()
+      .then(setLicense)
+      .catch(() => setLicense({ state: 'off', usable: true }));
+    return api.onLicenseChanged((state) => setLicense((old) => ({ ...(old || {}), ...state })));
+  }, []);
 
   useEffect(() => {
     api.settings.get().then(setSettings);
@@ -49,7 +59,22 @@ export default function App() {
     setPage({ name, ...extra });
   };
 
-  if (!settings) return null;
+  if (!settings || !license) return null;
+
+  const gate =
+    license.state === 'unregistered' ? (
+      <RegisterScreen license={license} onState={setLicense} />
+    ) : license.state === 'locked' ? (
+      <LockScreen license={license} onState={setLicense} />
+    ) : null;
+
+  if (gate) {
+    return (
+      <I18nContext.Provider value={{ lang, t, setLang }}>
+        <ToastProvider>{gate}</ToastProvider>
+      </I18nContext.Provider>
+    );
+  }
 
   return (
     <I18nContext.Provider value={{ lang, t, setLang }}>
@@ -99,6 +124,7 @@ export default function App() {
           </aside>
 
           <main className="content">
+            <TrialBanner license={license} onState={setLicense} />
             {page.name === 'new' && <VoucherForm key={`new-${formKey}`} settings={settings} onNew={() => go('new')} />}
             {page.name === 'edit' && (
               <VoucherForm key={`edit-${page.id}`} id={page.id} settings={settings} onNew={() => go('new')} />
@@ -116,7 +142,9 @@ export default function App() {
                 onOpenBook={(bookId) => go('list', { bookId })}
               />
             )}
-            {page.name === 'settings' && <Settings settings={settings} onSaved={setSettings} />}
+            {page.name === 'settings' && (
+              <Settings settings={settings} onSaved={setSettings} license={license} onLicense={setLicense} />
+            )}
           </main>
         </div>
       </ToastProvider>
