@@ -28,6 +28,18 @@ Desktop app (Electron + React/Vite + SQLite via built-in `node:sqlite`) for prom
 - `src/print/VoucherPrint.jsx` — `VoucherSheet` is the print template (mm units), also used for the live
   preview in Settings. The print window calls `api.printReady()` once fonts and images load.
 
+## Licensing (ElevaHub)
+- `electron/licensing/*` — fingerprint (`snd_…` from the OS machine id), signed `desktop` documents (Ed25519,
+  same format as ElevaHub), trial / active / locked rules, clock high-water mark. Design: ElevaHub
+  `docs/DESKTOP-LICENSING.md`.
+- `electron/license-config.json` — `apiUrl` (license-api Worker host, NOT the Hub URL) and `publicKeys`.
+  Empty `apiUrl` = licensing off. `npm run dist` refuses an empty config or the test key
+  (`SANAD_ALLOW_UNLICENSED=1` to override).
+- Locked: writes and printing refused in `main.cjs` (`LICENSE_LOCKED`); backups still work; restore keeps
+  the license rows.
+- Env for tests: `SANAD_LICENSE_API`, `SANAD_LICENSE_KEYS`, `SANAD_FINGERPRINT`, `SANAD_HOSTNAME`;
+  `e2e/licenseServer.mjs` is a fake Worker.
+
 ## UI components (no native form controls)
 - `src/components/Select.jsx` — combobox/listbox, keyboard (arrows, Home/End, Enter, Escape, type-ahead).
 - `src/components/DateInput.jsx` — type dd/mm/yyyy (Arabic digits OK) or pick from a calendar that shows
