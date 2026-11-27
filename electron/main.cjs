@@ -1,12 +1,57 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell, safeStorage } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
 const { openDb, inspectBackup } = require('./db.cjs');
+const { createLicensing } = require('./licensing/index.cjs');
+const licenseConfigFile = require('./license-config.json');
 
 const DEV_URL = process.env.VITE_DEV_SERVER_URL;
 let repo;
 let dbFile;
+let licensing;
+
+// Calls that change data or print are refused while the license is locked (enforced here, not only
+// hidden in the UI). Reading, settings and backup stay available.
+const LICENSED_CHANNELS = new Set([
+  'books:create',
+  'books:createInstallments',
+  'books:setStatus',
+  'books:print',
+  'vouchers:create',
+  'vouchers:update',
+  'vouchers:cancel',
+  'vouchers:print',
+]);
+
+function licenseConfig() {
+  const config = { ...licenseConfigFile };
+  if (process.env.SANAD_LICENSE_API !== undefined) config.apiUrl = process.env.SANAD_LICENSE_API;
+  if (process.env.SANAD_LICENSE_KEYS) config.publicKeys = JSON.parse(process.env.SANAD_LICENSE_KEYS);
+  return config;
+}
+
+function startLicensing() {
+  const secure = safeStorage.isEncryptionAvailable();
+  licensing = createLicensing({
+    store: repo.licenseStore,
+    config: licenseConfig(),
+    appVersion: app.getVersion(),
+    protect: (s) => (secure ? `enc:${safeStorage.encryptString(s).toString('base64')}` : s),
+    unprotect: (s) => (s.startsWith('enc:') ? safeStorage.decryptString(Buffer.from(s.slice(4), 'base64')) : s),
+  });
+}
+
+function broadcastLicense(state) {
+  for (const win of BrowserWindow.getAllWindows()) win.webContents.send('license:changed', state);
+}
+
+async function checkLicense() {
+  if (!licensing || !licensing.enabled) return;
+  const before = licensing.status();
+  const after = await licensing.check();
+  if (before.state !== after.state || before.daysLeft !== after.daysLeft || before.validUntil !== after.validUntil) broadcastLicense(after);
+}
 let mainWindow;
 
 function loadApp(win, hash = '') {
@@ -174,6 +219,7 @@ async function printJob({ route, ids, fileName, mode }) {
 function handle(channel, fn) {
   ipcMain.handle(channel, async (_e, ...args) => {
     try {
+      if (LICENSED_CHANNELS.has(channel) && licensing && !licensing.usable()) throw new Error('LICENSE_LOCKED');
       return { ok: true, data: await fn(...args) };
     } catch (err) {
       return { ok: false, error: err.message || String(err) };
@@ -183,6 +229,19 @@ function handle(channel, fn) {
 
 function registerIpc() {
   handle('app:info', () => ({ version: app.getVersion() }));
+  handle('license:status', () => ({ ...licensing.status(), support: licenseConfig().support || {} }));
+  handle('license:register', async (data) => {
+    const email = String((data && data.email) || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Error('EMAIL_INVALID');
+    const state = await licensing.register({ ...data, email });
+    broadcastLicense(state);
+    return state;
+  });
+  handle('license:check', async () => {
+    const state = await licensing.check();
+    broadcastLicense(state);
+    return state;
+  });
   handle('app:openSite', () => shell.openExternal('https://eleva-protech.com'));
   handle('settings:get', () => repo.getSettings());
   handle('settings:save', (values) => repo.saveSettings(values));
@@ -235,6 +294,10 @@ function registerIpc() {
     const safety = path.join(path.dirname(dbFile), `sanad-before-restore-${stamp}.db`);
     repo.backup(safety);
 
+    // The license belongs to this machine, not to the data: keep it across the restore.
+    const keep = ['device_id', 'device_secret', 'document', 'high_water', 'last_check_at'];
+    const licenseRows = Object.fromEntries(keep.map((k) => [k, repo.licenseStore.get(k)]).filter(([, v]) => v !== null));
+
     repo.close();
     for (const ext of ['-wal', '-shm']) {
       try {
@@ -245,6 +308,9 @@ function registerIpc() {
     }
     fs.copyFileSync(source, dbFile);
     repo = openDb(dbFile);
+    repo.licenseStore.clear(keep);
+    if (Object.keys(licenseRows).length) repo.licenseStore.set(licenseRows);
+    startLicensing();
     setTimeout(() => mainWindow && mainWindow.reload(), 300);
     return { ...info, safety };
   });
@@ -273,8 +339,12 @@ app.whenReady().then(() => {
   dbFile = path.join(app.getPath('userData'), 'sanad.db');
   repo = openDb(dbFile);
   seedDefaultLogo();
+  startLicensing();
   registerIpc();
   createMainWindow();
+  // Check with the server now and every 6 hours (silently; offline keeps the last signed answer).
+  mainWindow.webContents.once('did-finish-load', () => checkLicense().catch(() => {}));
+  setInterval(() => checkLicense().catch(() => {}), 6 * 3600_000);
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
   });

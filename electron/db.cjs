@@ -147,6 +147,12 @@ function migrate(db) {
     );
 
     CREATE INDEX IF NOT EXISTS idx_vouchers_debtor ON vouchers(debtor_name);
+
+    -- Licensing (electron/licensing): device id, encrypted device secret, last signed document, clock high-water.
+    CREATE TABLE IF NOT EXISTS license_state (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
     CREATE INDEX IF NOT EXISTS idx_vouchers_debtor_id ON vouchers(debtor_id_number);
   `);
 
@@ -432,6 +438,26 @@ function createRepo(db) {
     return db.prepare(sql).all(params).map(decorate);
   }
 
+  // ---------- licensing state ----------
+  const licenseStore = {
+    get(key) {
+      const row = db.prepare('SELECT value FROM license_state WHERE key = ?').get(key);
+      return row ? row.value : null;
+    },
+    set(values) {
+      const stmt = db.prepare(
+        'INSERT INTO license_state (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+      );
+      transaction(db, () => {
+        for (const [k, v] of Object.entries(values)) stmt.run(k, v == null ? null : String(v));
+      })();
+    },
+    clear(keys) {
+      const stmt = db.prepare('DELETE FROM license_state WHERE key = ?');
+      for (const k of keys) stmt.run(k);
+    },
+  };
+
   function backup(file) {
     db.prepare('VACUUM INTO ?').run(file);
     return file;
@@ -455,6 +481,7 @@ function createRepo(db) {
     getVoucher,
     listVouchers,
     backup,
+    licenseStore,
     close: () => db.close(),
   };
 }

@@ -9,6 +9,16 @@ contextBridge.exposeInMainWorld('sanad', {
     pickLogo: () => call('settings:pickLogo'),
   },
   app: { info: () => call('app:info'), openSite: () => call('app:openSite') },
+  license: {
+    status: () => call('license:status'),
+    register: (data) => call('license:register', data),
+    check: () => call('license:check'),
+  },
+  onLicenseChanged: (fn) => {
+    const listener = (_e, state) => fn(state);
+    ipcRenderer.on('license:changed', listener);
+    return () => ipcRenderer.removeListener('license:changed', listener);
+  },
   printers: { list: () => call('printers:list') },
   backup: { create: () => call('backup:create'), restore: () => call('backup:restore') },
   books: {
