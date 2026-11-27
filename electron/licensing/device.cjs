@@ -43,9 +43,16 @@ function machineId() {
   return `fallback:${os.hostname()}|${(os.cpus()[0] || {}).model}|${os.totalmem()}|${macs[0] || ''}`;
 }
 
-/** `snd_` + 40 base64url characters of SHA-256(product + machine id). Tests may override it. */
+// Test overrides (SANAD_FINGERPRINT, SANAD_HOSTNAME) are off unless the app turns them on, which it
+// does only when it is not packaged: in a customer build an environment variable must not fake the device.
+let testOverrides = false;
+function allowTestOverrides(on) {
+  testOverrides = Boolean(on);
+}
+
+/** `snd_` + 40 base64url characters of SHA-256(product + machine id). */
 function fingerprint(product = 'sanad') {
-  if (process.env.SANAD_FINGERPRINT) return process.env.SANAD_FINGERPRINT;
+  if (testOverrides && process.env.SANAD_FINGERPRINT) return process.env.SANAD_FINGERPRINT;
   return `snd_${sha256(`${product}:${machineId()}`).toString('base64url').slice(0, 40)}`;
 }
 
@@ -60,7 +67,7 @@ function deviceInfo(appVersion) {
   const cpu = os.cpus()[0];
   const clip = (s) => String(s || '').slice(0, 200);
   return {
-    hostname: clip(process.env.SANAD_HOSTNAME || os.hostname()),
+    hostname: clip((testOverrides && process.env.SANAD_HOSTNAME) || os.hostname()),
     os: clip(`${typeof os.version === 'function' ? os.version() : os.type()} ${os.release()}`),
     arch: clip(os.arch()),
     cpu: clip(cpu && cpu.model ? cpu.model.trim() : ''),
@@ -71,4 +78,4 @@ function deviceInfo(appVersion) {
   };
 }
 
-module.exports = { fingerprint, deviceInfo, machineId };
+module.exports = { fingerprint, deviceInfo, machineId, allowTestOverrides };

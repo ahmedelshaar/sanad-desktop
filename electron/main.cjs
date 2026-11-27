@@ -4,9 +4,16 @@ const fs = require('node:fs');
 const os = require('node:os');
 const { openDb, inspectBackup } = require('./db.cjs');
 const { createLicensing } = require('./licensing/index.cjs');
+const { allowTestOverrides } = require('./licensing/device.cjs');
 const licenseConfigFile = require('./license-config.json');
 
-const DEV_URL = process.env.VITE_DEV_SERVER_URL;
+// A customer build (packaged) ignores every test/dev environment variable: none of them may switch
+// licensing off, fake the device or load another UI. They work only when running from the source.
+const PACKAGED = app.isPackaged;
+const devEnv = (name) => (PACKAGED ? undefined : process.env[name]);
+allowTestOverrides(!PACKAGED);
+
+const DEV_URL = devEnv('VITE_DEV_SERVER_URL');
 let repo;
 let dbFile;
 let licensing;
@@ -26,8 +33,8 @@ const LICENSED_CHANNELS = new Set([
 
 function licenseConfig() {
   const config = { ...licenseConfigFile };
-  if (process.env.SANAD_LICENSE_API !== undefined) config.apiUrl = process.env.SANAD_LICENSE_API;
-  if (process.env.SANAD_LICENSE_KEYS) config.publicKeys = JSON.parse(process.env.SANAD_LICENSE_KEYS);
+  if (devEnv('SANAD_LICENSE_API') !== undefined) config.apiUrl = devEnv('SANAD_LICENSE_API');
+  if (devEnv('SANAD_LICENSE_KEYS')) config.publicKeys = JSON.parse(devEnv('SANAD_LICENSE_KEYS'));
   return config;
 }
 
@@ -40,6 +47,12 @@ function startLicensing() {
     protect: (s) => (secure ? `enc:${safeStorage.encryptString(s).toString('base64')}` : s),
     unprotect: (s) => (s.startsWith('enc:') ? safeStorage.decryptString(Buffer.from(s.slice(4), 'base64')) : s),
   });
+}
+
+// Second, independent check used inside the data layer and the print path (the IPC gate is the first).
+// Re-reads the signed state every time instead of trusting a flag.
+function assertLicensed() {
+  if (licensing && !licensing.status().usable) throw new Error('LICENSE_LOCKED');
 }
 
 function broadcastLicense(state) {
@@ -65,6 +78,7 @@ function webPrefs() {
     contextIsolation: true,
     nodeIntegration: false,
     sandbox: false,
+    devTools: !PACKAGED,
   };
 }
 
@@ -157,6 +171,7 @@ function printBook(bookId, mode) {
 }
 
 async function printJob({ route, ids, fileName, mode }) {
+  assertLicensed();
   const settings = repo.getSettings();
   const pageSize = pageSizeFromSettings(settings);
   const landscape = settings.paper === 'A5L';
@@ -307,7 +322,7 @@ function registerIpc() {
       }
     }
     fs.copyFileSync(source, dbFile);
-    repo = openDb(dbFile);
+    repo = openDb(dbFile, { guard: assertLicensed });
     repo.licenseStore.clear(keep);
     if (Object.keys(licenseRows).length) repo.licenseStore.set(licenseRows);
     startLicensing();
@@ -337,7 +352,7 @@ if (process.env.SANAD_USER_DATA) app.setPath('userData', process.env.SANAD_USER_
 
 app.whenReady().then(() => {
   dbFile = path.join(app.getPath('userData'), 'sanad.db');
-  repo = openDb(dbFile);
+  repo = openDb(dbFile, { guard: assertLicensed });
   seedDefaultLogo();
   startLicensing();
   registerIpc();

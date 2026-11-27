@@ -76,12 +76,17 @@ function seqLabel(seq, count) {
   return String(seq).padStart(width, '0');
 }
 
-function openDb(file) {
+/**
+ * @param {string} file
+ * @param {{guard?: () => void}} [opts] guard runs before every write that the license covers and throws
+ *   when the app is locked (the IPC gate in main.cjs is the first check, this is the second).
+ */
+function openDb(file, opts = {}) {
   const db = new DatabaseSync(file);
   if (file !== ':memory:') db.exec('PRAGMA journal_mode = WAL');
   db.exec('PRAGMA foreign_keys = ON');
   migrate(db);
-  return createRepo(db);
+  return createRepo(db, opts.guard || (() => {}));
 }
 
 function migrate(db) {
@@ -171,7 +176,7 @@ function migrate(db) {
   for (const [k, v] of Object.entries(DEFAULT_SETTINGS)) insert.run(k, v);
 }
 
-function createRepo(db) {
+function createRepo(db, guard = () => {}) {
   // ---------- settings ----------
   function getSettings() {
     const rows = db.prepare('SELECT key, value FROM settings').all();
@@ -209,6 +214,7 @@ function createRepo(db) {
   }
 
   function createBook({ name, count, notes }) {
+    guard();
     const n = parseInt(count, 10);
     if (!name || !String(name).trim()) throw new Error('BOOK_NAME_REQUIRED');
     if (!Number.isInteger(n) || n < 1 || n > 10000) throw new Error('BOOK_COUNT_INVALID');
@@ -219,6 +225,7 @@ function createRepo(db) {
   }
 
   function setBookStatus(id, status) {
+    guard();
     if (!['open', 'closed'].includes(status)) throw new Error('BAD_STATUS');
     const book = getBook(id);
     if (!book) throw new Error('BOOK_NOT_FOUND');
@@ -371,15 +378,18 @@ function createRepo(db) {
   });
 
   function createInstallmentBook(data) {
+    guard();
     return getBook(createInstallmentBookTx(data));
   }
 
   function createVoucher(bookId, data) {
+    guard();
     validate(data);
     return getVoucher(createVoucherTx(bookId, data));
   }
 
   function updateVoucher(id, data) {
+    guard();
     validate(data);
     const existing = getVoucher(id);
     if (!existing) throw new Error('VOUCHER_NOT_FOUND');
@@ -397,6 +407,7 @@ function createRepo(db) {
   }
 
   function cancelVoucher(id, reason) {
+    guard();
     const v = getVoucher(id);
     if (!v) throw new Error('VOUCHER_NOT_FOUND');
     db.prepare(

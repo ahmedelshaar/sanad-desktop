@@ -4,7 +4,9 @@ const crypto = require('node:crypto');
 const vectors = require('./fixtures/license-test-vectors.json');
 const { canonicalize, verifyEnvelope, requestSignature, sha256 } = require('../electron/licensing/crypto.cjs');
 const { createLicensing } = require('../electron/licensing/index.cjs');
-const { fingerprint, deviceInfo } = require('../electron/licensing/device.cjs');
+const { fingerprint, deviceInfo, allowTestOverrides } = require('../electron/licensing/device.cjs');
+
+allowTestOverrides(true);
 
 const KEYS = [{ kid: vectors.test_key.kid, public_key: vectors.test_key.public_key_base64 }];
 const PRIVATE = crypto.createPrivateKey({ key: Buffer.from(vectors.test_key.pkcs8_der_base64, 'base64'), format: 'der', type: 'pkcs8' });
@@ -305,5 +307,57 @@ describe('licensing flow', () => {
     await assert.rejects(make().register({ email: 'a@b.co' }), /LICENSE_OFFLINE/);
     const limited = make({ fetchImpl: async () => ({ status: 429, json: async () => ({ error: 'rate_limited' }) }) });
     await assert.rejects(limited.register({ email: 'a@b.co' }), /LICENSE_RATE_LIMITED/);
+  });
+});
+
+describe('hardening', () => {
+  test('a packaged build ignores SANAD_FINGERPRINT / SANAD_HOSTNAME', () => {
+    process.env.SANAD_FINGERPRINT = 'snd_fake_00000000000000000000000000000000';
+    process.env.SANAD_HOSTNAME = 'FAKE-PC';
+    try {
+      allowTestOverrides(false);
+      assert.notEqual(fingerprint(), 'snd_fake_00000000000000000000000000000000');
+      assert.match(fingerprint(), /^snd_[A-Za-z0-9_-]{40}$/);
+      assert.notEqual(deviceInfo('1').hostname, 'FAKE-PC');
+      allowTestOverrides(true);
+      assert.equal(fingerprint(), 'snd_fake_00000000000000000000000000000000');
+    } finally {
+      allowTestOverrides(true);
+      delete process.env.SANAD_FINGERPRINT;
+      delete process.env.SANAD_HOSTNAME;
+    }
+  });
+
+  test('the data layer refuses licensed writes on its own (second check)', () => {
+    const { openDb } = require('../electron/db.cjs');
+    let locked = false;
+    const repo = openDb(':memory:', {
+      guard: () => {
+        if (locked) throw new Error('LICENSE_LOCKED');
+      },
+    });
+    const book = repo.createBook({ name: 'A', count: 5 });
+    locked = true;
+    assert.throws(() => repo.createBook({ name: 'B', count: 5 }), /LICENSE_LOCKED/);
+    assert.throws(() => repo.setBookStatus(book.id, 'closed'), /LICENSE_LOCKED/);
+    assert.throws(() => repo.createVoucher(book.id, {}), /LICENSE_LOCKED/);
+    assert.throws(() => repo.updateVoucher(1, {}), /LICENSE_LOCKED/);
+    assert.throws(() => repo.cancelVoucher(1, 'x'), /LICENSE_LOCKED/);
+    assert.throws(() => repo.createInstallmentBook({}), /LICENSE_LOCKED/);
+    // reading still works
+    assert.equal(repo.listBooks().length, 1);
+  });
+
+  test('release config: fuses on, asar on, obfuscated electron folder packed', () => {
+    const { build } = require('../package.json');
+    const f = build.electronFuses;
+    assert.equal(f.runAsNode, false);
+    assert.equal(f.enableNodeOptionsEnvironmentVariable, false);
+    assert.equal(f.enableNodeCliInspectArguments, false);
+    assert.equal(f.enableEmbeddedAsarIntegrityValidation, true);
+    assert.equal(f.onlyLoadAppFromAsar, true);
+    assert.notEqual(build.asar, false);
+    assert.ok(build.files.some((x) => typeof x === 'object' && x.from === '.harden/electron' && x.to === 'electron'));
+    assert.ok(!build.files.includes('electron/**/*'), 'the plain source must not be packed');
   });
 });
