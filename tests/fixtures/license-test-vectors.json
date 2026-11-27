@@ -1,0 +1,188 @@
+{
+    "_warning": "TEST ONLY. This keypair is public and must never sign a real license. Products must never trust kid \"test-2026-11\" in production builds.",
+    "spec": "docs/LICENSE-FORMAT.md",
+    "test_key": {
+        "kid": "test-2026-11",
+        "algorithm": "Ed25519",
+        "seed_base64": "EDqg4fRhE1DDyBdCJfbzdkj7km2U+0r9SC3OtwM/1aY=",
+        "public_key_base64": "gueeVROga5JI+F+8O3+0apotEZPbU9f3gs1cJy0rAHc=",
+        "public_key_hex": "82e79e5513a06b9248f85fbc3b7fb46a9a2d1193db53d7f782cd5c272d2b0077",
+        "pkcs8_der_base64": "MC4CAQAwBQYDK2VwBCIEIBA6oOH0YRNQw8gXQiX283ZI+5JtlPtK/UgtzrcDP9Wm"
+    },
+    "canonical_json": {
+        "valid": [
+            {
+                "name": "sorted keys, nested, no whitespace",
+                "input_json": "{ \"b\": 1, \"a\": { \"d\": [3, 2, 1], \"c\": null } }",
+                "canonical": "{\"a\":{\"c\":null,\"d\":[3,2,1]},\"b\":1}"
+            },
+            {
+                "name": "empty object stays an object, empty list stays a list",
+                "input_json": "{\"limits\": {}, \"domains\": []}",
+                "canonical": "{\"domains\":[],\"limits\":{}}"
+            },
+            {
+                "name": "literals and integers",
+                "input_json": "{\"t\": true, \"f\": false, \"n\": null, \"zero\": 0, \"neg\": -42, \"max\": 9007199254740991}",
+                "canonical": "{\"f\":false,\"max\":9007199254740991,\"n\":null,\"neg\":-42,\"t\":true,\"zero\":0}"
+            },
+            {
+                "name": "decimals are strings",
+                "input_json": "{\"storage_gb\": \"10.5\"}",
+                "canonical": "{\"storage_gb\":\"10.5\"}"
+            },
+            {
+                "name": "UTF-8 written raw, slash not escaped",
+                "input_json": "{\"name\": \"شركة اليفا — Eleva/KSA\"}",
+                "canonical": "{\"name\":\"شركة اليفا — Eleva/KSA\"}"
+            },
+            {
+                "name": "escapes",
+                "input_json": "{\"s\": \"quote \\\" backslash \\\\ newline \\n tab \\t cr \\r bs \\b ff \\f ctl \\u0001 \\u001f del \\u007f\"}",
+                "canonical": "{\"s\":\"quote \\\" backslash \\\\ newline \\n tab \\t cr \\r bs \\b ff \\f ctl \\u0001 \\u001f del \"}"
+            },
+            {
+                "name": "byte order of keys (uppercase before lowercase, dot and underscore)",
+                "input_json": "{\"modules.sso\": true, \"modules_api\": true, \"Zeta\": 1, \"alpha\": 2, \"modules.api\": false}",
+                "canonical": "{\"Zeta\":1,\"alpha\":2,\"modules.api\":false,\"modules.sso\":true,\"modules_api\":true}"
+            }
+        ],
+        "invalid": [
+            {
+                "name": "float",
+                "input_json": "{\"x\": 1.5}"
+            },
+            {
+                "name": "integer above 2^53-1",
+                "input_json": "{\"x\": 9007199254740993}"
+            },
+            {
+                "name": "non-ASCII key",
+                "input_json": "{\"اسم\": 1}"
+            }
+        ]
+    },
+    "license_key": {
+        "key": "ELV-SIM-7K2QD-M4XRT-9BCPW-H3NZ8",
+        "normalized_from": " elv-sim-7k2qd-m4xrt-9bcpw-h3nz8 ",
+        "sha256_hex": "9f0bb86a6d19dbf5bbca0ce29878b5108d8f80030036ecabf362b28690198585",
+        "last4": "3NZ8"
+    },
+    "license": {
+        "payload": {
+            "typ": "license",
+            "license_id": "0b9e7c1e-5d2a-4f7e-9c3b-2a1d4e5f6a7b",
+            "customer": {
+                "id": "5f1c2d3e-4b5a-4c6d-8e7f-9a0b1c2d3e4f",
+                "name": "شركة المثال للاتصالات"
+            },
+            "product": "sim_tracking",
+            "mode": "hybrid",
+            "issued_at": "2026-11-12T00:00:00Z",
+            "expires_at": "2027-11-12T00:00:00Z",
+            "limits": {
+                "sim_cards": 500,
+                "users": 5,
+                "storage_gb": "5.5"
+            },
+            "features": {
+                "modules.api": true,
+                "modules.sso": false,
+                "modules.timesheet_sync": true,
+                "modules.invoices": true,
+                "modules.reports": true
+            },
+            "policy": {
+                "on_expiry": {
+                    "warn_days": 30,
+                    "read_only_after_days": 14,
+                    "suspend_after_days": 60
+                },
+                "on_online_check_fail": {
+                    "action": "warn",
+                    "grace_days": 14
+                },
+                "on_multi_instance": {
+                    "action": "warn"
+                },
+                "offline_expiry": "2027-02-12T00:00:00Z"
+            },
+            "binding": {
+                "domains": [
+                    "sim.example.com"
+                ],
+                "fingerprints": []
+            },
+            "version": 3,
+            "kid": "test-2026-11"
+        },
+        "canonical": "{\"binding\":{\"domains\":[\"sim.example.com\"],\"fingerprints\":[]},\"customer\":{\"id\":\"5f1c2d3e-4b5a-4c6d-8e7f-9a0b1c2d3e4f\",\"name\":\"شركة المثال للاتصالات\"},\"expires_at\":\"2027-11-12T00:00:00Z\",\"features\":{\"modules.api\":true,\"modules.invoices\":true,\"modules.reports\":true,\"modules.sso\":false,\"modules.timesheet_sync\":true},\"issued_at\":\"2026-11-12T00:00:00Z\",\"kid\":\"test-2026-11\",\"license_id\":\"0b9e7c1e-5d2a-4f7e-9c3b-2a1d4e5f6a7b\",\"limits\":{\"sim_cards\":500,\"storage_gb\":\"5.5\",\"users\":5},\"mode\":\"hybrid\",\"policy\":{\"offline_expiry\":\"2027-02-12T00:00:00Z\",\"on_expiry\":{\"read_only_after_days\":14,\"suspend_after_days\":60,\"warn_days\":30},\"on_multi_instance\":{\"action\":\"warn\"},\"on_online_check_fail\":{\"action\":\"warn\",\"grace_days\":14}},\"product\":\"sim_tracking\",\"typ\":\"license\",\"version\":3}",
+        "signature_base64": "wbBs+ks9QsHU6cRnyNRsu7AUtiROqCy9OxkYnICKX0ZEYf+dm/66ST8Pi1jAxUrODpJU3g0Xue8VZoxuit2cCg==",
+        "file": "-----BEGIN ELEVA-LICENSE-V1-----\neyJraWQiOiJ0ZXN0LTIwMjYtMTEiLCJwYXlsb2FkIjp7ImJpbmRpbmciOnsiZG9t\nYWlucyI6WyJzaW0uZXhhbXBsZS5jb20iXSwiZmluZ2VycHJpbnRzIjpbXX0sImN1\nc3RvbWVyIjp7ImlkIjoiNWYxYzJkM2UtNGI1YS00YzZkLThlN2YtOWEwYjFjMmQz\nZTRmIiwibmFtZSI6Iti02LHZg9ipINin2YTZhdir2KfZhCDZhNmE2KfYqti12KfZ\nhNin2KoifSwiZXhwaXJlc19hdCI6IjIwMjctMTEtMTJUMDA6MDA6MDBaIiwiZmVh\ndHVyZXMiOnsibW9kdWxlcy5hcGkiOnRydWUsIm1vZHVsZXMuaW52b2ljZXMiOnRy\ndWUsIm1vZHVsZXMucmVwb3J0cyI6dHJ1ZSwibW9kdWxlcy5zc28iOmZhbHNlLCJt\nb2R1bGVzLnRpbWVzaGVldF9zeW5jIjp0cnVlfSwiaXNzdWVkX2F0IjoiMjAyNi0x\nMS0xMlQwMDowMDowMFoiLCJraWQiOiJ0ZXN0LTIwMjYtMTEiLCJsaWNlbnNlX2lk\nIjoiMGI5ZTdjMWUtNWQyYS00ZjdlLTljM2ItMmExZDRlNWY2YTdiIiwibGltaXRz\nIjp7InNpbV9jYXJkcyI6NTAwLCJzdG9yYWdlX2diIjoiNS41IiwidXNlcnMiOjV9\nLCJtb2RlIjoiaHlicmlkIiwicG9saWN5Ijp7Im9mZmxpbmVfZXhwaXJ5IjoiMjAy\nNy0wMi0xMlQwMDowMDowMFoiLCJvbl9leHBpcnkiOnsicmVhZF9vbmx5X2FmdGVy\nX2RheXMiOjE0LCJzdXNwZW5kX2FmdGVyX2RheXMiOjYwLCJ3YXJuX2RheXMiOjMw\nfSwib25fbXVsdGlfaW5zdGFuY2UiOnsiYWN0aW9uIjoid2FybiJ9LCJvbl9vbmxp\nbmVfY2hlY2tfZmFpbCI6eyJhY3Rpb24iOiJ3YXJuIiwiZ3JhY2VfZGF5cyI6MTR9\nfSwicHJvZHVjdCI6InNpbV90cmFja2luZyIsInR5cCI6ImxpY2Vuc2UiLCJ2ZXJz\naW9uIjozfSwic2lnbmF0dXJlIjoid2JCcytrczlRc0hVNmNSbnlOUnN1N0FVdGlS\nT3FDeTlPeGtZbklDS1gwWkVZZitkbS82NlNUOFBpMWpBeFVyT0RwSlUzZzBYdWU4\nVlpveHVpdDJjQ2c9PSJ9\n-----END ELEVA-LICENSE-V1-----\n"
+    },
+    "tampered_license": {
+        "note": "limits.sim_cards changed from 500 to 5000 after signing: verification MUST fail",
+        "file": "-----BEGIN ELEVA-LICENSE-V1-----\neyJraWQiOiJ0ZXN0LTIwMjYtMTEiLCJwYXlsb2FkIjp7ImJpbmRpbmciOnsiZG9t\nYWlucyI6WyJzaW0uZXhhbXBsZS5jb20iXSwiZmluZ2VycHJpbnRzIjpbXX0sImN1\nc3RvbWVyIjp7ImlkIjoiNWYxYzJkM2UtNGI1YS00YzZkLThlN2YtOWEwYjFjMmQz\nZTRmIiwibmFtZSI6Iti02LHZg9ipINin2YTZhdir2KfZhCDZhNmE2KfYqti12KfZ\nhNin2KoifSwiZXhwaXJlc19hdCI6IjIwMjctMTEtMTJUMDA6MDA6MDBaIiwiZmVh\ndHVyZXMiOnsibW9kdWxlcy5hcGkiOnRydWUsIm1vZHVsZXMuaW52b2ljZXMiOnRy\ndWUsIm1vZHVsZXMucmVwb3J0cyI6dHJ1ZSwibW9kdWxlcy5zc28iOmZhbHNlLCJt\nb2R1bGVzLnRpbWVzaGVldF9zeW5jIjp0cnVlfSwiaXNzdWVkX2F0IjoiMjAyNi0x\nMS0xMlQwMDowMDowMFoiLCJraWQiOiJ0ZXN0LTIwMjYtMTEiLCJsaWNlbnNlX2lk\nIjoiMGI5ZTdjMWUtNWQyYS00ZjdlLTljM2ItMmExZDRlNWY2YTdiIiwibGltaXRz\nIjp7InNpbV9jYXJkcyI6NTAwMCwic3RvcmFnZV9nYiI6IjUuNSIsInVzZXJzIjo1\nfSwibW9kZSI6Imh5YnJpZCIsInBvbGljeSI6eyJvZmZsaW5lX2V4cGlyeSI6IjIw\nMjctMDItMTJUMDA6MDA6MDBaIiwib25fZXhwaXJ5Ijp7InJlYWRfb25seV9hZnRl\ncl9kYXlzIjoxNCwic3VzcGVuZF9hZnRlcl9kYXlzIjo2MCwid2Fybl9kYXlzIjoz\nMH0sIm9uX211bHRpX2luc3RhbmNlIjp7ImFjdGlvbiI6Indhcm4ifSwib25fb25s\naW5lX2NoZWNrX2ZhaWwiOnsiYWN0aW9uIjoid2FybiIsImdyYWNlX2RheXMiOjE0\nfX0sInByb2R1Y3QiOiJzaW1fdHJhY2tpbmciLCJ0eXAiOiJsaWNlbnNlIiwidmVy\nc2lvbiI6M30sInNpZ25hdHVyZSI6IndiQnMra3M5UXNIVTZjUm55TlJzdTdBVXRp\nUk9xQ3k5T3hrWW5JQ0tYMFpFWWYrZG0vNjZTVDhQaTFqQXhVck9EcEpVM2cwWHVl\nOFZab3h1aXQyY0NnPT0ifQ==\n-----END ELEVA-LICENSE-V1-----\n"
+    },
+    "check_response": {
+        "envelope": {
+            "kid": "test-2026-11",
+            "payload": {
+                "typ": "check",
+                "status": "active",
+                "license_id": "0b9e7c1e-5d2a-4f7e-9c3b-2a1d4e5f6a7b",
+                "instance_id": "inst_01JCX9Q4T8M2N5P7R3V6W8Y0Z1",
+                "nonce": "n-6f1d2c3b4a5e",
+                "server_time": "2026-11-12T10:00:00Z",
+                "valid_until": "2026-11-15T10:00:00Z",
+                "expires_at": "2027-11-12T00:00:00Z",
+                "limits": {
+                    "sim_cards": 500,
+                    "users": 5,
+                    "storage_gb": "5.5"
+                },
+                "features": {
+                    "modules.api": true,
+                    "modules.sso": false
+                },
+                "policy": {
+                    "on_expiry": {
+                        "warn_days": 30,
+                        "read_only_after_days": 14,
+                        "suspend_after_days": 60
+                    },
+                    "on_online_check_fail": {
+                        "action": "warn",
+                        "grace_days": 14
+                    },
+                    "on_multi_instance": {
+                        "action": "warn"
+                    },
+                    "offline_expiry": null
+                },
+                "multi_instance": false,
+                "version": 3,
+                "kid": "test-2026-11"
+            },
+            "signature": "AoqbLNRhWcMUOCy3iqCCoq3a7uKunFxHrPc+cE1z1pzjW8T/PHftQYemTCdTQ8h+iyeTej41qS3+bA86uOVxAw=="
+        },
+        "canonical": "{\"expires_at\":\"2027-11-12T00:00:00Z\",\"features\":{\"modules.api\":true,\"modules.sso\":false},\"instance_id\":\"inst_01JCX9Q4T8M2N5P7R3V6W8Y0Z1\",\"kid\":\"test-2026-11\",\"license_id\":\"0b9e7c1e-5d2a-4f7e-9c3b-2a1d4e5f6a7b\",\"limits\":{\"sim_cards\":500,\"storage_gb\":\"5.5\",\"users\":5},\"multi_instance\":false,\"nonce\":\"n-6f1d2c3b4a5e\",\"policy\":{\"offline_expiry\":null,\"on_expiry\":{\"read_only_after_days\":14,\"suspend_after_days\":60,\"warn_days\":30},\"on_multi_instance\":{\"action\":\"warn\"},\"on_online_check_fail\":{\"action\":\"warn\",\"grace_days\":14}},\"server_time\":\"2026-11-12T10:00:00Z\",\"status\":\"active\",\"typ\":\"check\",\"valid_until\":\"2026-11-15T10:00:00Z\",\"version\":3}"
+    },
+    "client_request_signature": {
+        "note": "HMAC-SHA256 keyed with the raw 32-byte SHA-256 of the normalized license key over timestamp\\nMETHOD\\npath\\nbody",
+        "method": "POST",
+        "path": "/v1/check",
+        "timestamp": "1794477600",
+        "body": "{\"domain\":\"sim.example.com\",\"fingerprint\":\"fp-3c9a\",\"instance_id\":\"inst_01JCX9Q4T8M2N5P7R3V6W8Y0Z1\",\"license_key\":\"ELV-SIM-7K2QD-M4XRT-9BCPW-H3NZ8\",\"nonce\":\"n-6f1d2c3b4a5e\",\"product_version\":\"2.4.0\",\"usage\":{\"sim_cards\":312,\"storage_bytes\":1073741824,\"users\":4}}",
+        "signature": "v1=5eb5f623a819fb5da9e2031a00bc54792f2da847126b48b725f2cf13327c1ec9"
+    },
+    "admin_request_signature": {
+        "note": "HMAC-SHA256 keyed with the UTF-8 bytes of HUB_ADMIN_SECRET over timestamp\\nMETHOD\\npath?query\\nbody",
+        "secret": "test-admin-secret-DO-NOT-USE",
+        "method": "POST",
+        "path": "/v1/sign",
+        "timestamp": "1794477600",
+        "body": "{\"payload\":{\"x\":1}}",
+        "signature": "v1=bf6d17e716e7032badaf314a4a6f3c983c898990fd54bf60a69b0cfc9068f217"
+    }
+}
